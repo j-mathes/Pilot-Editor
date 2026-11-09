@@ -164,11 +164,14 @@ ul.warn-list li.info { border-left: 3px solid var(--accent2); }
 .section > h2 { font-size: 18px; margin-bottom: 10px; }
 .block { margin-bottom: 14px; }
 .block:last-child { margin-bottom: 0; }
+.cols { display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: flex-start; }
+.cols > .block { margin-bottom: 0; }
 .block > h3 { font-size: 14px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
 .block-tools, .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 
-.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px 20px; }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, 25rem); gap: 8px 24px; justify-content: start; }
+.form-grid.list { grid-template-columns: max-content; gap: 6px; }
+.row { display: grid; grid-template-columns: 12rem auto; justify-content: start; align-items: center; gap: 10px; min-height: 30px; }
 .row-label { color: var(--muted); }
 
 input, select {
@@ -197,11 +200,11 @@ input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent);
 .chip.info { background: var(--accent2); }
 
 /* ---- tables ---- */
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; }
-table.grid { border-collapse: collapse; width: 100%; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; width: fit-content; max-width: 100%; }
+table.grid { border-collapse: collapse; width: auto; }
 table.grid th, table.grid td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 table.grid thead th { background: var(--panel2); color: var(--muted); font-weight: 600; position: sticky; top: 0; }
-table.grid tbody th { font-weight: 500; position: sticky; left: 0; background: var(--panel); }
+table.grid tbody th { font-weight: 500; position: sticky; left: 0; background: var(--panel); min-width: 11rem; padding-right: 20px; }
 table.grid tfoot th, table.grid tfoot td { background: var(--panel2); }
 table.grid tr:last-child > * { border-bottom: 0; }
 .cell { display: flex; align-items: center; gap: 8px; }
@@ -219,6 +222,7 @@ table.grid tr:last-child > * { border-bottom: 0; }
 .card-title { font-weight: 600; flex: 1 1 auto; }
 .card progress { width: 110px; height: 8px; accent-color: var(--accent); }
 .progress-label { color: var(--muted); font-size: 12px; min-width: 3.5rem; text-align: right; }
+.card-total { min-width: 8rem; text-align: right; font-variant-numeric: tabular-nums; }
 .card-body { padding: 8px 12px 12px; border-top: 1px solid var(--line); background: var(--panel); border-radius: 0 0 var(--radius) var(--radius); }
 .badge { padding: 1px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--line); }
 .badge.tone-active { border-color: var(--accent); color: var(--accent); }
@@ -264,6 +268,7 @@ dialog ul.plain { margin: 10px 0; max-height: 50vh; overflow: auto; }
   .sidebar a { white-space: nowrap; }
   .toolbar { margin-left: 0; }
   .form-grid { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 1fr; gap: 2px; }
   .card > summary { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {

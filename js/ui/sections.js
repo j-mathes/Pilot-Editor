@@ -14,7 +14,7 @@
   }
 
   function formBlock(state, widgets, block) {
-    const grid = h('div', { class: 'form-grid' });
+    const grid = h('div', { class: 'form-grid' + (block.layout === 'list' ? ' list' : '') });
     for (const raw of block.items) {
       const item = typeof raw === 'string' ? { id: raw } : raw;
       if (item.derived) {
@@ -74,10 +74,11 @@
       const badge = h('span', { class: 'badge' });
       const bar = h('progress', { max: 1, value: 0 });
       const label = h('span', { class: 'progress-label' });
+      const total = card.total ? h('span', { class: 'card-total' }) : null;
       const body = h('div', { class: 'card-body' });
       for (const b of card.blocks) body.append(renderBlock(state, widgets, b));
       const node = h('details', { class: 'card', id: 'card-' + card.id },
-        h('summary', null, h('span', { class: 'card-title' }, card.title), badge, bar, label), body);
+        h('summary', null, h('span', { class: 'card-title' }, card.title), badge, bar, label, total), body);
       function update() {
         const b = card.badge(state.get);
         badge.textContent = b.text;
@@ -85,6 +86,7 @@
         const p = card.progress(state.get);
         bar.max = p.total; bar.value = Math.min(p.value, p.total);
         label.textContent = p.value + ' / ' + p.total;
+        if (total) total.textContent = 'Score ' + PE.ui.fmt(card.total(state.get));
       }
       update();
       widgets.onRefresh(update);
@@ -158,7 +160,7 @@
       title: s.title,
       el: h('section', { class: 'section', id: 'sec-' + s.id, 'aria-labelledby': 'sec-h-' + s.id },
         h('h2', { id: 'sec-h-' + s.id }, s.title),
-        s.blocks.map(b => renderBlock(state, widgets, b)))
+        s.layout === 'columns' ? h('div', { class: 'cols' }, s.blocks.map(b => renderBlock(state, widgets, b))) : s.blocks.map(b => renderBlock(state, widgets, b)))
     }));
   }
 

@@ -114,6 +114,7 @@
     title: 'Tour ' + (t + 1),
     badge: g => ({ text: TOUR_STATUS[g('tour.' + t + '.status')] || 'Unknown', tone: ['idle', 'active', 'warn', 'done'][g('tour.' + t + '.status')] || 'warn' }),
     progress: g => ({ value: g('tour.' + t + '.ops'), total: TOUR_OPS[t] }),
+    total: derived['tour.' + t + '.total'].compute,
     blocks: [
       { type: 'form', items: [{ id: 'tour.' + t + '.status', label: 'Status' }, { id: 'tour.' + t + '.ops', label: 'Operations completed' }, { derived: 'tour.' + t + '.total' }] },
       {
@@ -136,7 +137,7 @@
   const sections = [
     {
       id: 'pilot', title: 'Pilot',
-      blocks: [{ type: 'form', items: ['pilot.health', 'pilot.rank', 'pilot.score', 'pilot.experience', 'tour.current', 'tour.currentOps'] }]
+      blocks: [{ type: 'form', layout: 'list', items: ['pilot.health', 'pilot.rank', 'pilot.score', 'pilot.experience', 'tour.current', 'tour.currentOps'] }]
     },
     {
       id: 'training', title: 'Training',
@@ -166,7 +167,7 @@
       }]
     },
     {
-      id: 'stats', title: 'Statistics',
+      id: 'stats', title: 'Statistics', layout: 'columns',
       blocks: [
         {
           type: 'table', title: 'Space victories and captures', searchable: true, columns: ['Victories', 'Captures'],
@@ -174,7 +175,7 @@
           footer: [{ derived: 'stat.totalKills' }, { derived: 'stat.totalCaps' }]
         },
         {
-          type: 'form', title: 'Weapons and losses',
+          type: 'form', layout: 'list', title: 'Weapons and losses',
           items: ['stat.surface', 'stat.laserFired', 'stat.laserCraft', 'stat.laserGround', { derived: 'stat.laserAcc' },
             'stat.missileFired', 'stat.missileCraft', 'stat.missileGround', { derived: 'stat.missileAcc' }, 'stat.lost']
         }
@@ -183,7 +184,7 @@
     { id: 'campaign', title: 'Tours of duty', blocks: [{ type: 'cards', cards: tourCards }] },
     {
       id: 'medals', title: 'Medals',
-      blocks: [{ type: 'form', items: ['medal.corellian', 'medal.mantooine', 'medal.alderaan', 'medal.yavin', 'medal.hoth', 'medal.kalidor'] }]
+      blocks: [{ type: 'form', layout: 'list', items: ['medal.corellian', 'medal.mantooine', 'medal.alderaan', 'medal.yavin', 'medal.hoth', 'medal.kalidor'] }]
     },
     { id: 'raw', title: 'Raw bytes', blocks: [{ type: 'hex' }] }
   ];
@@ -218,6 +219,16 @@
       }
       if (status === 0 && ops > 0) {
         out.push({ id: 'tour.' + t + '.status', level: 'info', text: 'Tour ' + (t + 1) + ' is Inactive but has ' + ops + ' completed operations.' });
+      }
+      let scored = 0;
+      for (let i = 0; i < TOUR_SLOTS[t]; i++) if (get('tour.' + t + '.op.' + i) > 0) scored++;
+      if (status === 0 && scored > 0) {
+        out.push({
+          id: 'tour.' + t + '.status', level: 'info',
+          text: 'Tour ' + (t + 1) + ' is Inactive but has scores for ' + scored + ' operations' +
+            (get('tour.current') === t ? ' and is the current tour' : '') +
+            '. If it was played, set its status and operations completed.'
+        });
       }
     });
     if (get('stat.laserCraft') > get('stat.laserFired')) out.push({ id: 'stat.laserCraft', level: 'warn', text: 'Laser craft hits exceed lasers fired.' });

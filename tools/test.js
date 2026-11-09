@@ -105,6 +105,15 @@ test('TOPACE.PLT (1706-byte layout)', () => {
   assert.strictEqual(st.get('stat.lost'), 12);
 });
 
+test('TOPACE.PLT: Tour 4 has scores but is Inactive, and the editor says so', () => {
+  const st = load('TOPACE.PLT');
+  assert.strictEqual(st.get('tour.3.status'), 0);
+  assert.strictEqual(st.get('tour.current'), 3);
+  assert.strictEqual(st.get('tour.3.op.14'), 0x08a2);
+  const w = st.warningsFor('tour.3.status');
+  assert(w.length === 1 && /15 operations and is the current tour/.test(w[0].text), JSON.stringify(w));
+});
+
 test('RUSTY.PLT (3410 bytes)', () => {
   const st = load('RUSTY.PLT');
   assert.strictEqual(st.get('tour.0.status'), 1);

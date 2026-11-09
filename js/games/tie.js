@@ -115,6 +115,7 @@
     title: 'Battle ' + (b + 1) + ': ' + name,
     badge: g => ({ text: BATTLE_STATUS[g('battle.' + b + '.status')] || 'Unknown', tone: ['idle', 'active', 'warn', 'done'][g('battle.' + b + '.status')] || 'warn' }),
     progress: g => ({ value: Math.min(g('battle.' + b + '.last'), MISSIONS[b]), total: MISSIONS[b] }),
+    total: derived['battle.' + b + '.total'].compute,
     blocks: [
       { type: 'form', items: [{ id: 'battle.' + b + '.status', label: 'Status' }, { id: 'battle.' + b + '.last', label: 'Last mission completed (8 = finished)' }, { derived: 'battle.' + b + '.total' }] },
       { type: 'form', items: [{ id: 'battle.' + b + '.secondary', label: 'Secondary objectives' }, { id: 'battle.' + b + '.bonus', label: 'Bonus objectives' }] },
@@ -140,7 +141,7 @@
   const sections = [
     {
       id: 'pilot', title: 'Pilot',
-      blocks: [{ type: 'form', items: ['pilot.health', 'pilot.rank', 'pilot.difficulty', 'pilot.score', 'pilot.skill', 'pilot.secret'] }]
+      blocks: [{ type: 'form', layout: 'list', items: ['pilot.health', 'pilot.rank', 'pilot.difficulty', 'pilot.score', 'pilot.skill', 'pilot.secret'] }]
     },
     {
       id: 'training', title: 'Training',
