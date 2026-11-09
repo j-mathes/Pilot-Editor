@@ -175,7 +175,7 @@
           footer: [{ derived: 'stat.totalKills' }, { derived: 'stat.totalCaps' }]
         },
         {
-          type: 'form', layout: 'list', title: 'Weapons and losses',
+          type: 'form', layout: 'list', boxed: true, title: 'Weapons and losses',
           items: ['stat.surface', 'stat.laserFired', 'stat.laserCraft', 'stat.laserGround', { derived: 'stat.laserAcc' },
             'stat.missileFired', 'stat.missileCraft', 'stat.missileGround', { derived: 'stat.missileAcc' }, 'stat.lost']
         }

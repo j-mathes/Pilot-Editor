@@ -166,7 +166,9 @@ ul.warn-list li.info { border-left: 3px solid var(--accent2); }
 .block:last-child { margin-bottom: 0; }
 .cols { display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: flex-start; }
 .cols > .block { margin-bottom: 0; }
-.block > h3 { font-size: 14px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.box { border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; width: fit-content; max-width: 100%; }
+.block > h3 { font-size: 14px; color: var(--muted); margin: 0; font-weight: 600; }
+.block-head { display: flex; align-items: center; gap: 12px; min-height: 30px; margin-bottom: 6px; }
 .block-tools, .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 
 .form-grid { display: grid; grid-template-columns: repeat(auto-fill, 25rem); gap: 8px 24px; justify-content: start; }

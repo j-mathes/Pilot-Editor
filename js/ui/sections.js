@@ -13,6 +13,11 @@
       h('button', { type: 'button', class: 'btn small', onclick: () => state.batch(api => a.run(api)) }, a.label)));
   }
 
+  function blockHead(block, extra) {
+    if (!block.title && !extra) return null;
+    return h('div', { class: 'block-head' }, block.title && h('h3', null, block.title), extra);
+  }
+
   function formBlock(state, widgets, block) {
     const grid = h('div', { class: 'form-grid' + (block.layout === 'list' ? ' list' : '') });
     for (const raw of block.items) {
@@ -27,7 +32,7 @@
         grid.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, label), w.el));
       }
     }
-    return h('div', { class: 'block' }, block.title && h('h3', null, block.title), actionBar(state, block.actions), grid);
+    return h('div', { class: 'block' }, blockHead(block), actionBar(state, block.actions), block.boxed ? h('div', { class: 'box' }, grid) : grid);
   }
 
   function cellNodes(widgets, cell) {
@@ -64,8 +69,8 @@
       });
     }
     return h('div', { class: 'block' },
-      block.title && h('h3', null, block.title),
-      h('div', { class: 'block-tools' }, search, actionBar(state, block.actions)),
+      blockHead(block, search),
+      actionBar(state, block.actions),
       h('div', { class: 'table-wrap' }, table));
   }
 
