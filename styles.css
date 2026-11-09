@@ -244,6 +244,14 @@ table.grid tr:last-child > * { border-bottom: 0; }
 .hex-row .k { color: var(--text); }
 .hex-row .c { background: var(--accent); color: #fff; border-radius: 2px; opacity: 1; }
 
+/* ---- footer ---- */
+.site-footer {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 12px 16px 20px;
+  color: var(--muted); font-size: 12px; border-top: 1px solid var(--line);
+}
+.site-footer a { color: var(--muted); }
+.site-footer a:hover { color: var(--accent); }
+
 /* ---- dialog and overlay ---- */
 dialog {
   width: min(560px, 92vw); color: var(--text); background: var(--panel);
