@@ -44,14 +44,16 @@
   }
 
   function tableBlock(state, widgets, block) {
-    const head = h('tr', null, h('th', { scope: 'col' }, ''), block.columns.map(c => h('th', { scope: 'col' }, c)));
+    const headRow = () => h('tr', null, h('th', { scope: 'col' }, ''), block.columns.map(c => h('th', { scope: 'col' }, c)));
     const rows = block.rows.map(r => {
       const tr = h('tr', null, h('th', { scope: 'row' }, r.label));
       for (const cell of r.cells) tr.append(h('td', null, h('div', { class: 'cell' }, cellNodes(widgets, cell))));
       tr.dataset.label = r.label.toLowerCase();
       return tr;
     });
-    const table = h('table', { class: 'grid' }, h('thead', null, head), h('tbody', null, rows));
+    const makeTable = body => h('table', { class: 'grid' }, h('thead', null, headRow()), body);
+    const bodyA = h('tbody', null, rows);
+    const table = makeTable(bodyA);
     if (block.footer) {
       const tr = h('tr', null);
       block.footer.forEach(item => {
@@ -61,17 +63,35 @@
       table.append(h('tfoot', null, tr));
     }
     let search = null;
+    // With block.split the rows flow into two columns (top to bottom, then the next column) while many rows match.
+    const bodyB = block.split ? h('tbody') : null;
+    const wrapB = block.split ? h('div', { class: 'table-wrap' }, makeTable(bodyB)) : null;
+    function layout() {
+      const q = search ? search.value.trim().toLowerCase() : '';
+      const visible = [];
+      for (const tr of rows) {
+        tr.hidden = !!q && !tr.dataset.label.includes(q);
+        if (!tr.hidden) visible.push(tr);
+      }
+      if (!bodyB) return;
+      const two = visible.length > (block.splitMin || 12);
+      const half = two ? Math.ceil(visible.length / 2) : visible.length;
+      visible.forEach((tr, i) => (i < half ? bodyA : bodyB).append(tr));
+      for (const tr of rows) if (tr.hidden) bodyA.append(tr);
+      wrapB.hidden = !two;
+    }
     if (block.searchable) {
       search = h('input', { type: 'search', class: 'search', placeholder: 'Filter rows', title: 'Type to show only rows whose name contains this text', 'aria-label': 'Filter ' + (block.title || 'rows') });
-      search.addEventListener('input', () => {
-        const q = search.value.trim().toLowerCase();
-        for (const tr of rows) tr.hidden = !!q && !tr.dataset.label.includes(q);
-      });
+      search.addEventListener('input', layout);
     }
+    layout();
+    const tables = block.split
+      ? h('div', { class: 'table-split' }, h('div', { class: 'table-wrap' }, table), wrapB)
+      : h('div', { class: 'table-wrap' }, table);
     return h('div', { class: 'block' },
       blockHead(block, search),
       actionBar(state, block.actions),
-      h('div', { class: 'table-wrap' }, table));
+      tables);
   }
 
   function cardsBlock(state, widgets, block) {

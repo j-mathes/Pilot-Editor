@@ -210,6 +210,7 @@ table.grid tbody th { font-weight: 500; position: sticky; left: 0; background: v
 table.grid tfoot th, table.grid tfoot td { background: var(--panel2); }
 table.grid tr:last-child > * { border-bottom: 0; }
 .cell { display: flex; align-items: center; gap: 8px; }
+.table-split { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
 .cell input[type="number"].num { width: 7rem; }
 
 /* ---- cards ---- */

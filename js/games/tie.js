@@ -170,16 +170,16 @@
       }]
     },
     {
-      id: 'stats', title: 'Statistics',
+      id: 'stats', title: 'Statistics', layout: 'columns',
       blocks: [
         {
-          type: 'form', title: 'Totals and weapons',
-          items: ['stat.kills', { derived: 'stat.npcSum' }, 'stat.captures', 'stat.laserFired', 'stat.laserHit', { derived: 'stat.laserAcc' },
-            'stat.warheadFired', 'stat.warheadHit', { derived: 'stat.warheadAcc' }, 'stat.lost']
+          type: 'table', title: 'Kills by ship type', searchable: true, split: true, columns: ['Kills'],
+          rows: NPC.map((name, i) => ({ label: name, cells: ['stat.npc.' + i] }))
         },
         {
-          type: 'table', title: 'Kills by ship type', searchable: true, columns: ['Kills'],
-          rows: NPC.map((name, i) => ({ label: name, cells: ['stat.npc.' + i] }))
+          type: 'form', layout: 'list', boxed: true, title: 'Totals, weapons and losses',
+          items: ['stat.kills', { derived: 'stat.npcSum' }, 'stat.captures', 'stat.laserFired', 'stat.laserHit', { derived: 'stat.laserAcc' },
+            'stat.warheadFired', 'stat.warheadHit', { derived: 'stat.warheadAcc' }, 'stat.lost']
         }
       ]
     },

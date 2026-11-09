@@ -131,6 +131,27 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert.deepStrictEqual([...new Set(missing)], []);
   });
 
+  check('TIE kills table flows into two columns and shrinks when filtered', () => {
+    PE.app.loadBytes('TOPACE10.TFR', read('reference/TIE-Fighter/TOPACE10.TFR'), null);
+    const wrap = d.querySelector('.table-split');
+    assert(wrap, 'split table missing');
+    const [left, right] = wrap.querySelectorAll('tbody');
+    const names = body => Array.from(body.querySelectorAll('tr')).filter(tr => !tr.hidden).map(tr => tr.querySelector('th').textContent);
+    const all = Array.from(PE.games.tie.fields.filter(f => /^stat\.npc\./.test(f.id)).map(f => f.label.replace(/ kills$/, '')));
+    assert.deepStrictEqual(names(left).concat(names(right)), all);
+    assert.strictEqual(names(left).length, Math.ceil(all.length / 2));
+    assert(!right.closest('.table-wrap').hidden);
+    const search = wrap.closest('.block').querySelector('input[type=search]');
+    search.value = 'tie';
+    search.dispatchEvent(new w.Event('input'));
+    assert(right.closest('.table-wrap').hidden, 'second column should hide for a short list');
+    assert(names(left).length > 0 && names(left).every(n => /tie/i.test(n)));
+    search.value = '';
+    search.dispatchEvent(new w.Event('input'));
+    assert.deepStrictEqual(names(left).concat(names(right)), all);
+    assert(!right.closest('.table-wrap').hidden);
+  });
+
   check('no script errors', () => assert.deepStrictEqual(errors, []));
   console.log(passed + ' UI checks passed');
   w.close();
