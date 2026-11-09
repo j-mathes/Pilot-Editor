@@ -10,7 +10,7 @@
     Object.assign({ id, type, offset, label, kind: 'enum', options: options(labels), max: labels.length - 1 }, extra);
   const chk = (id, offset, label) => ({ id, type: 'u8', offset, label, kind: 'bool' });
   const flags = (id, offset, label, bitLabel) =>
-    ({ id, type: 'u8', offset, label, kind: 'flags', bits: Array.from({ length: 8 }, (_, i) => bitLabel + ' ' + (i + 1)) });
+    ({ id, type: 'u8', offset, label, kind: 'flags', hint: 'Each box is one objective; tick the ones completed.', bits: Array.from({ length: 8 }, (_, i) => bitLabel + ' ' + (i + 1)) });
 
   const MAX_SCORE = 2046820351; // 0x79FFFFFF, the game's limit for 'long' values
 
@@ -43,14 +43,14 @@
   fields.push(sel('pilot.rank', 'u8', 2, 'Rank', RANKS));
   fields.push(sel('pilot.difficulty', 'u8', 3, 'Difficulty', DIFFICULTY));
   fields.push(num('pilot.score', 'i32', 4, 'Score', { min: 0, max: MAX_SCORE }));
-  fields.push(num('pilot.skill', 'u16', 8, 'Skill level'));
-  fields.push(sel('pilot.secret', 'u8', 10, 'Secret Order rank', SECRET));
+  fields.push(num('pilot.skill', 'u16', 8, 'Skill level', { hint: 'Skill level of the pilot (0 = novice, 65535 = super ace).' }));
+  fields.push(sel('pilot.secret', 'u8', 10, 'Secret Order rank', SECRET, { hint: 'Rank in the Emperor\'s Secret Order.' }));
 
   SHIPS.forEach((name, i) => {
-    fields.push(num('training.' + i + '.next', 'u8', 29 + i, name + ' next training level', { softMax: 21 }));
+    fields.push(num('training.' + i + '.next', 'u8', 29 + i, name + ' next training level', { softMax: 21, hint: 'The next training level offered for this craft.' }));
     fields.push(num('training.' + i + '.score', 'u32', 42 + 4 * i, name + ' training score', { max: MAX_SCORE }));
     fields.push(num('training.' + i + '.done', 'u8', 90 + i, name + ' training level completed', {
-      softMax: 20, valueLabels: { 2: 'Not completed', 4: 'Certificate' }
+      softMax: 20, hint: 'Training status for this craft. Seen in files: 2 = not completed, 4 = certificate.', valueLabels: { 2: 'Not completed', 4: 'Certificate' }
     }));
   });
 
@@ -66,7 +66,7 @@
     const p = 'Battle ' + (b + 1);
     fields.push(sel('battle.' + b + '.status', 'u8', 617 + b, p + ' status', BATTLE_STATUS));
     // The samples use 8 as "finished" in every battle, whatever its mission count.
-    fields.push(num('battle.' + b + '.last', 'u8', 637 + b, p + ' last mission completed', { max: 8 }));
+    fields.push(num('battle.' + b + '.last', 'u8', 637 + b, p + ' last mission completed', { max: 8, hint: 'Last mission completed (0 = none). Finished battles use 8.' }));
     fields.push(flags('battle.' + b + '.secondary', 913 + b, p + ' secondary objectives', 'Secondary'));
     fields.push(flags('battle.' + b + '.bonus', 933 + b, p + ' bonus objectives', 'Bonus'));
     for (let m = 0; m < MISSIONS[b]; m++) {
@@ -74,7 +74,7 @@
     }
   });
 
-  fields.push(num('stat.kills', 'u16', 1626, 'Total kills'));
+  fields.push(num('stat.kills', 'u16', 1626, 'Total kills', { hint: 'Total kills. Compare with the sum of kills by type shown beside it.' }));
   fields.push(num('stat.captures', 'u16', 1628, 'Total captures'));
   NPC.forEach((name, i) => fields.push(num('stat.npc.' + i, 'u16', 1632 + 2 * i, name + ' kills')));
   fields.push(num('stat.laserFired', 'u32', 1908, 'Lasers fired'));
@@ -123,7 +123,7 @@
         type: 'table', title: 'Mission scores', columns: ['Score'],
         rows: Array.from({ length: MISSIONS[b] }, (_, m) => ({ label: 'Mission ' + (m + 1), cells: ['battle.' + b + '.score.' + m] })),
         actions: [{
-          label: 'Mark battle finished',
+          label: 'Mark battle finished', title: 'Set this battle to Done, last mission 8, all objectives ticked (scores are not changed)',
           run: api => {
             api.set('battle.' + b + '.status', 3);
             api.set('battle.' + b + '.last', 8);
@@ -131,7 +131,7 @@
             api.set('battle.' + b + '.bonus', 255);
           }
         }, {
-          label: 'Clear scores',
+          label: 'Clear scores', title: 'Set every mission score in this battle to 0',
           run: api => { for (let m = 0; m < MISSIONS[b]; m++) api.set('battle.' + b + '.score.' + m, 0); }
         }]
       }
@@ -159,10 +159,10 @@
           cells: Array.from({ length: 4 }, (_, m) => ['hist.' + s + '.' + m + '.done', 'hist.' + s + '.' + m + '.score'])
         })),
         actions: [{
-          label: 'Mark all complete',
+          label: 'Mark all complete', title: 'Tick every historic mission as complete (scores are not changed)',
           run: api => SHIPS.forEach((_, s) => { for (let m = 0; m < 4; m++) api.set('hist.' + s + '.' + m + '.done', true); })
         }, {
-          label: 'Clear all',
+          label: 'Clear all', title: 'Untick every historic mission and set its score to 0',
           run: api => SHIPS.forEach((_, s) => {
             for (let m = 0; m < 4; m++) { api.set('hist.' + s + '.' + m + '.done', false); api.set('hist.' + s + '.' + m + '.score', 0); }
           })
@@ -215,6 +215,7 @@
 
   const presets = [{
     label: 'Top Ace',
+    title: 'Max rank and skill, top Secret Order rank, first 10 battles finished (like the TOPACE10 sample)',
     run: api => {
       api.set('pilot.health', 0);
       api.set('pilot.rank', 5);

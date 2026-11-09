@@ -107,8 +107,8 @@
         list.append(h('li', null,
           h('span', { class: 'chg-label' }, snap.name),
           h('span', { class: 'chg-vals' }, new Date(snap.time).toLocaleString() + ' · ' + snap.bytes.length + ' bytes'),
-          h('button', { type: 'button', class: 'btn small', onclick: () => { dlg.close(); loadBytes(snap.name, new Uint8Array(snap.bytes), null); } }, 'Open'),
-          h('button', { type: 'button', class: 'btn small', onclick: () => PE.files.download(snap.name, snap.bytes) }, 'Download')));
+          h('button', { type: 'button', class: 'btn small', title: 'Open this saved copy in the editor', onclick: () => { dlg.close(); loadBytes(snap.name, new Uint8Array(snap.bytes), null); } }, 'Open'),
+          h('button', { type: 'button', class: 'btn small', title: 'Download this saved copy as a file', onclick: () => PE.files.download(snap.name, snap.bytes) }, 'Download')));
       }
     }).catch(() => {
       list.textContent = '';

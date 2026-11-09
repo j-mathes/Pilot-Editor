@@ -118,6 +118,19 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert.strictEqual(PE.app.session.state.get('pilot.rank'), 5);
   });
 
+  check('every button, select and input has a tooltip', () => {
+    const missing = [];
+    for (const game of ['reference/X-Wing/TOPACE.PLT', 'reference/TIE-Fighter/TOPACE10.TFR']) {
+      PE.app.loadBytes(path.basename(game), read(game), null);
+      for (const el of d.querySelectorAll('button, select, input[type=number], input[type=search], input[type=text]')) {
+        if (el.closest('label') && el.type === 'checkbox') continue;
+        if (!el.title) missing.push(el.id || el.getAttribute('aria-label') || el.textContent.trim());
+      }
+      for (const opt of d.querySelectorAll('#presetSelect option')) if (opt.value && !opt.title) missing.push('preset ' + opt.textContent);
+    }
+    assert.deepStrictEqual([...new Set(missing)], []);
+  });
+
   check('no script errors', () => assert.deepStrictEqual(errors, []));
   console.log(passed + ' UI checks passed');
   w.close();

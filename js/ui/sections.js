@@ -10,7 +10,7 @@
   function actionBar(state, actions) {
     if (!actions || !actions.length) return null;
     return h('div', { class: 'actions' }, actions.map(a =>
-      h('button', { type: 'button', class: 'btn small', onclick: () => state.batch(api => a.run(api)) }, a.label)));
+      h('button', { type: 'button', class: 'btn small', title: a.title || a.label + ' (can be undone)', onclick: () => state.batch(api => a.run(api)) }, a.label)));
   }
 
   function blockHead(block, extra) {
@@ -62,7 +62,7 @@
     }
     let search = null;
     if (block.searchable) {
-      search = h('input', { type: 'search', class: 'search', placeholder: 'Filter rows', 'aria-label': 'Filter ' + (block.title || 'rows') });
+      search = h('input', { type: 'search', class: 'search', placeholder: 'Filter rows', title: 'Type to show only rows whose name contains this text', 'aria-label': 'Filter ' + (block.title || 'rows') });
       search.addEventListener('input', () => {
         const q = search.value.trim().toLowerCase();
         for (const tr of rows) tr.hidden = !!q && !tr.dataset.label.includes(q);
@@ -76,14 +76,14 @@
 
   function cardsBlock(state, widgets, block) {
     const cards = block.cards.map(card => {
-      const badge = h('span', { class: 'badge' });
-      const bar = h('progress', { max: 1, value: 0 });
-      const label = h('span', { class: 'progress-label' });
-      const total = card.total ? h('span', { class: 'card-total' }) : null;
+      const badge = h('span', { class: 'badge', title: 'Status' });
+      const bar = h('progress', { max: 1, value: 0, title: 'Progress' });
+      const label = h('span', { class: 'progress-label', title: 'Progress' });
+      const total = card.total ? h('span', { class: 'card-total', title: 'Total of the scores in this card' }) : null;
       const body = h('div', { class: 'card-body' });
       for (const b of card.blocks) body.append(renderBlock(state, widgets, b));
       const node = h('details', { class: 'card', id: 'card-' + card.id },
-        h('summary', null, h('span', { class: 'card-title' }, card.title), badge, bar, label, total), body);
+        h('summary', { title: 'Click to expand or collapse' }, h('span', { class: 'card-title' }, card.title), badge, bar, label, total), body);
       function update() {
         const b = card.badge(state.get);
         badge.textContent = b.text;

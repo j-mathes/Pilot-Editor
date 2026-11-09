@@ -52,9 +52,10 @@
 
     function numberWidget(f, label) {
       const { min, max } = codec.limits(f);
+      const range = min + ' to ' + max + (f.softMax !== undefined ? ' (usual limit ' + f.softMax + ')' : '');
       const input = h('input', {
         type: 'number', class: 'num', step: 1, min, max, 'aria-label': label || f.label,
-        title: f.hint || (min + ' to ' + max + (f.softMax !== undefined ? ' (usual limit ' + f.softMax + ')' : ''))
+        title: f.hint ? f.hint + ' Range: ' + range + '.' : 'Range: ' + range
       });
       const chip = h('span', { class: 'chip', hidden: true });
       const vl = f.valueLabels ? h('span', { class: 'value-label' }) : null;
@@ -75,7 +76,7 @@
     }
 
     function enumWidget(f, label) {
-      const select = h('select', { 'aria-label': label || f.label });
+      const select = h('select', { 'aria-label': label || f.label, title: f.hint || label || f.label });
       const chip = h('span', { class: 'chip', hidden: true });
       const wrap = h('span', { class: 'field' }, select, chip);
       select.addEventListener('change', () => { state.set(f.id, Number(select.value)); update(); });
@@ -93,7 +94,7 @@
     }
 
     function boolWidget(f, label) {
-      const box = h('input', { type: 'checkbox', 'aria-label': label || f.label });
+      const box = h('input', { type: 'checkbox', 'aria-label': label || f.label, title: f.hint || label || f.label });
       const wrap = h('span', { class: 'field check' }, box);
       box.addEventListener('change', () => { state.set(f.id, box.checked); update(); });
       function update() { box.checked = !!state.get(f.id); }
@@ -114,7 +115,7 @@
         });
         return box;
       });
-      const wrap = h('span', { class: 'field flags' },
+      const wrap = h('span', { class: 'field flags', title: f.hint }, 
         boxes.map((b, i) => h('label', { title: f.bits[i] }, b, h('span', null, String(i + 1)))));
       const chip = h('span', { class: 'chip', hidden: true });
       wrap.append(chip);
@@ -138,7 +139,7 @@
 
     function derived(did) {
       const d = state.def.derived[did];
-      const out = h('output', { class: 'derived' });
+      const out = h('output', { class: 'derived', title: d.hint || d.label + ' (calculated, read-only)' });
       const wrap = h('span', { class: 'field derived-field' }, out);
       let button = null;
       if (d.sync) {

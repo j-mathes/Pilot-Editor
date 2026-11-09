@@ -21,7 +21,7 @@
 
     <div class="toolbar" role="toolbar" aria-label="Pilot file actions">
       <button type="button" class="btn" id="btnOpen" title="Open (Ctrl+O)">Open</button>
-      <select id="newSelect" class="btn" aria-label="New pilot">
+      <select id="newSelect" class="btn" aria-label="New pilot" title="Start a new, blank pilot for a game">
         <option value="">New pilot...</option>
       </select>
       <button type="button" class="btn primary" id="btnSave" title="Save (Ctrl+S)" disabled>Save</button>
@@ -29,8 +29,8 @@
       <span class="sep" aria-hidden="true"></span>
       <button type="button" class="btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
       <button type="button" class="btn" id="btnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
-      <select id="presetSelect" class="btn" aria-label="Presets" disabled></select>
-      <button type="button" class="btn" id="btnChanges" aria-expanded="false" aria-controls="drawer" disabled>
+      <select id="presetSelect" class="btn" aria-label="Presets" title="Apply a preset to this pilot (can be undone)" disabled></select>
+      <button type="button" class="btn" id="btnChanges" aria-expanded="false" aria-controls="drawer" title="Show changes since the file was opened or saved, and warnings" disabled>
         Changes <span class="count" id="changeCount" hidden></span>
       </button>
       <button type="button" class="btn" id="btnRestore" title="Copies of files as they were opened">Restore</button>
@@ -46,7 +46,7 @@
       <p id="bannerText"></p>
       <ul id="bannerList"></ul>
     </div>
-    <button type="button" class="btn small" id="bannerClose" aria-label="Dismiss message">Dismiss</button>
+    <button type="button" class="btn small" id="bannerClose" aria-label="Dismiss message" title="Dismiss this message">Dismiss</button>
   </div>
 
   <div class="layout">
@@ -58,17 +58,17 @@
       <section class="landing" id="landing" aria-labelledby="landingTitle">
         <h2 id="landingTitle">Open a pilot file</h2>
         <p>Drop a file anywhere on this page, or choose one. Files stay on your computer; nothing is uploaded.</p>
-        <button type="button" class="btn primary large" id="landOpen">Open pilot file</button>
+        <button type="button" class="btn primary large" id="landOpen" title="Choose a .plt or .tfr pilot file (Ctrl+O)">Open pilot file</button>
         <div class="game-cards">
           <article class="game-card" data-game-card="xwing">
             <h3>X-Wing</h3>
             <p>.plt pilot files</p>
-            <button type="button" class="btn" data-new="xwing">New X-Wing pilot</button>
+            <button type="button" class="btn" data-new="xwing" title="Start a blank X-Wing pilot">New X-Wing pilot</button>
           </article>
           <article class="game-card" data-game-card="tie">
             <h3>TIE Fighter</h3>
             <p>.tfr pilot files</p>
-            <button type="button" class="btn" data-new="tie">New TIE Fighter pilot</button>
+            <button type="button" class="btn" data-new="tie" title="Start a blank TIE Fighter pilot">New TIE Fighter pilot</button>
           </article>
         </div>
         <p class="hint" id="saveNote"></p>
@@ -90,10 +90,10 @@
     <aside class="drawer" id="drawer" aria-label="Changes and warnings" hidden>
       <div class="drawer-head">
         <h2>Changes <span class="count" id="warnCount" hidden></span></h2>
-        <button type="button" class="btn small" id="closeDrawer">Close</button>
+        <button type="button" class="btn small" id="closeDrawer" title="Close this panel">Close</button>
       </div>
       <div class="drawer-actions">
-        <button type="button" class="btn small" id="revertAll">Revert all</button>
+        <button type="button" class="btn small" id="revertAll" title="Put every changed field back to its value when the file was opened or last saved (can be undone)">Revert all</button>
       </div>
       <ul class="plain" id="changeList"></ul>
       <h3>Warnings</h3>
@@ -105,7 +105,7 @@
     <h2 id="restoreTitle">Files as they were opened</h2>
     <p class="hint">Copies are kept in this browser only (the 20 most recent).</p>
     <ul class="plain" id="restoreList"></ul>
-    <div class="dialog-actions"><button type="button" class="btn" id="closeRestore">Close</button></div>
+    <div class="dialog-actions"><button type="button" class="btn" id="closeRestore" title="Close this window">Close</button></div>
   </dialog>
 
   <div class="drop-overlay" id="dropOverlay" hidden><p>Drop a pilot file to open it</p></div>

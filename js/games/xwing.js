@@ -35,20 +35,20 @@
   const fields = [];
   fields.push(sel('pilot.health', 'u8', 2, 'Health', HEALTH));
   fields.push(sel('pilot.rank', 'u8', 3, 'Rank', RANKS));
-  fields.push(num('pilot.score', 'i32', 4, 'Tour of Duty points', { min: 0, softMax: 999999 }));
-  fields.push(num('pilot.experience', 'u16', 8, 'Experience points'));
-  fields.push(sel('tour.current', 'u8', 640, 'Current tour', ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4', 'Tour 5']));
+  fields.push(num('pilot.score', 'i32', 4, 'Tour of Duty points', { min: 0, softMax: 999999, hint: 'Total Tour of Duty points.' }));
+  fields.push(num('pilot.experience', 'u16', 8, 'Experience points', { hint: 'Experience (skill rating) of the pilot.' }));
+  fields.push(sel('tour.current', 'u8', 640, 'Current tour', ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4', 'Tour 5'], { hint: 'The tour the pilot is on now (stored 0-based in the file).' }));
   // Samples show the game keeps this count at both 642 and 647.
-  fields.push(num('tour.currentOps', 'u8', 647, 'Operations completed (current tour)', { mirrors: [642], softMax: 20 }));
+  fields.push(num('tour.currentOps', 'u8', 647, 'Operations completed (current tour)', { mirrors: [642], softMax: 20, hint: 'Operations completed in the current tour. The game keeps this value in two places (bytes 642 and 647); both are updated.' }));
 
   ['corellian', 'mantooine', 'alderaan', 'yavin', 'hoth'].forEach((k, i) => {
     const names = ['Corellian Cross', 'Mantooine Medallion', 'Star of Alderaan', 'Shield of Yavin', 'Talons of Hoth'];
     fields.push(chk('medal.' + k, 10 + i, names[i]));
   });
-  fields.push(sel('medal.kalidor', 'u8', 17, 'Kalidor Crescent', KALIDOR));
+  fields.push(sel('medal.kalidor', 'u8', 17, 'Kalidor Crescent', KALIDOR, { hint: 'Level of the Kalidor Crescent award.' }));
 
   SHIPS.forEach((name, i) => {
-    fields.push(num('training.' + i + '.level', 'u8', 134 + i, name + ' training level', { max: 8 }));
+    fields.push(num('training.' + i + '.level', 'u8', 134 + i, name + ' training level', { max: 8, hint: 'Highest training level completed (0 to 8).' }));
     fields.push(num('training.' + i + '.score', 'u32', 38 + 4 * i, name + ' best score', { softMax: 999999 }));
   });
 
@@ -62,10 +62,10 @@
   });
 
   TOUR_SLOTS.forEach((slots, t) => {
-    fields.push(sel('tour.' + t + '.status', 'u8', 735 + t, 'Tour ' + (t + 1) + ' status', TOUR_STATUS));
+    fields.push(sel('tour.' + t + '.status', 'u8', 735 + t, 'Tour ' + (t + 1) + ' status', TOUR_STATUS, { hint: 'Only one tour should be Active. Activating a tour also makes it the current tour.' }));
     // The game stores the last completed operation index here (0xFF = none).
     fields.push(num('tour.' + t + '.last', 'u8', 743 + t, 'Tour ' + (t + 1) + ' last operation index', { hidden: true }));
-    fields.push(num('tour.' + t + '.ops', 'u8', 751 + t, 'Tour ' + (t + 1) + ' operations completed', { max: slots, softMax: TOUR_OPS[t] }));
+    fields.push(num('tour.' + t + '.ops', 'u8', 751 + t, 'Tour ' + (t + 1) + ' operations completed', { max: slots, softMax: TOUR_OPS[t], hint: 'Operations completed in this tour. The last-operation marker in the file is kept in step automatically.' }));
     for (let i = 0; i < slots; i++) {
       fields.push(num('tour.' + t + '.op.' + i, 'u32', TOUR_SCORE_BASE[t] + 4 * i,
         'Tour ' + (t + 1) + ' operation ' + TOUR_OP_LABELS[t][i] + ' score', { softMax: 999999 }));
@@ -121,13 +121,13 @@
         type: 'table', title: 'Operation scores', columns: ['Score'],
         rows: TOUR_OP_LABELS[t].map((label, i) => ({ label: 'Operation ' + label, cells: ['tour.' + t + '.op.' + i] })),
         actions: [{
-          label: 'Mark all operations complete',
+          label: 'Mark all operations complete', title: 'Set this tour to Complete with every operation done (scores are not changed)',
           run: api => {
             api.set('tour.' + t + '.status', 3);
             api.set('tour.' + t + '.ops', TOUR_OPS[t]);
           }
         }, {
-          label: 'Clear scores',
+          label: 'Clear scores', title: 'Set every operation score in this tour to 0',
           run: api => { for (let i = 0; i < slots; i++) api.set('tour.' + t + '.op.' + i, 0); }
         }]
       }
@@ -144,7 +144,7 @@
       blocks: [{
         type: 'table', title: 'Training simulator', columns: ['Level completed', 'Best score'],
         rows: SHIPS.map((name, i) => ({ label: name, cells: ['training.' + i + '.level', 'training.' + i + '.score'] })),
-        actions: [{ label: 'Complete all levels', run: api => SHIPS.forEach((_, i) => api.set('training.' + i + '.level', 8)) }]
+        actions: [{ label: 'Complete all levels', title: 'Set every training ship to level 8 (can be undone)', run: api => SHIPS.forEach((_, i) => api.set('training.' + i + '.level', 8)) }]
       }]
     },
     {
@@ -156,10 +156,10 @@
           cells: Array.from({ length: 6 }, (_, m) => ['hist.' + g + '.' + m + '.done', 'hist.' + g + '.' + m + '.score'])
         })),
         actions: [{
-          label: 'Mark all complete',
+          label: 'Mark all complete', title: 'Tick every historic mission as complete (scores are not changed)',
           run: api => HISTORIC.forEach((_, g) => { for (let m = 0; m < 6; m++) api.set('hist.' + g + '.' + m + '.done', true); })
         }, {
-          label: 'Clear all',
+          label: 'Clear all', title: 'Untick every historic mission and set its score to 0',
           run: api => HISTORIC.forEach((_, g) => {
             for (let m = 0; m < 6; m++) { api.set('hist.' + g + '.' + m + '.done', false); api.set('hist.' + g + '.' + m + '.score', 0); }
           })
@@ -247,6 +247,7 @@
 
   const presets = [{
     label: 'Top Ace',
+    title: 'Max rank, experience, medals and training; complete historic missions and Tours 1 to 3',
     run: api => {
       api.set('pilot.health', 0);
       api.set('pilot.rank', 5);

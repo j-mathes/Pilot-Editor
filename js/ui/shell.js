@@ -77,7 +77,7 @@
       changes.append(h('li', null,
         h('span', { class: 'chg-label' }, c.field.label),
         h('span', { class: 'chg-vals' }, describe(c.field, c.from) + ' → ' + describe(c.field, c.to)),
-        h('button', { type: 'button', class: 'btn small', onclick: () => s.revert(c.id) }, 'Revert')));
+        h('button', { type: 'button', class: 'btn small', title: 'Put this field back to its value when the file was opened or last saved', onclick: () => s.revert(c.id) }, 'Revert')));
     }
     const w = s.warnings();
     if (!w.length) warns.append(h('li', { class: 'empty' }, 'No warnings.'));
@@ -100,7 +100,7 @@
     const list = $('navList');
     list.textContent = '';
     for (const s of sections) {
-      list.append(h('li', null, h('a', { href: '#sec-' + s.id, 'data-sec': s.id }, s.title)));
+      list.append(h('li', null, h('a', { href: '#sec-' + s.id, 'data-sec': s.id, title: 'Jump to ' + s.title }, s.title)));
     }
     if (spy) spy.disconnect();
     if (!('IntersectionObserver' in root)) return;
@@ -137,8 +137,8 @@
     const preset = $('presetSelect');
     preset.textContent = '';
     preset.append(h('option', { value: '' }, 'Presets'));
-    preset.append(h('option', { value: 'new' }, 'Reset to new pilot'));
-    (state.def.presets || []).forEach((p, i) => preset.append(h('option', { value: String(i) }, p.label)));
+    preset.append(h('option', { value: 'new', title: 'Set every field to the values of a new pilot' }, 'Reset to new pilot'));
+    (state.def.presets || []).forEach((p, i) => preset.append(h('option', { value: String(i), title: p.title || p.label }, p.label)));
     preset.value = '';
 
     $('pilotName').value = state.name;
