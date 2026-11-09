@@ -131,20 +131,37 @@ Also carried over:
   - Checking then unchecking an objective clears its flag.
   - A crafted out-of-range file warns instead of crashing.
   - After saving, the second half equals the first.
-- **Manual browser check:** open via `file://`, then confirm GitHub Pages compatibility (relative paths only). Include a keyboard-only pass and a 360px-wide viewport.
+- [x] **Manual browser check (done):** opened via `file://` and from GitHub Pages (relative paths only), with a visual pass, a keyboard-only pass, a narrow viewport and saving.
 
 ## Delivery order
 
-Status: phases 0-6 are implemented and pass `node tools/test.js` (54 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (11 checks). Not yet done: a visual and keyboard pass in a real browser, the GitHub Pages check, the rank-versus-score warning, and the README section.
+Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor and on GitHub Pages (https://j-mathes.github.io/Pilot-Editor/). Phases 0-6 are implemented and pass `node tools/test.js` (55 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (13 checks). The version number changes only when the owner says so.
 
-0. **Verification script (done):** `tools/test.js` loads the browser scripts into a `vm` context and checks every sample. The one-off probe scripts used to settle the open points are removed.
-1. **Core and shell:** binary helpers, codec, game registry (with stub game files), detection, open, save, new, banner errors, dirty tracking.
-2. **State:** original snapshot, undo/redo, modified highlighting, Changes drawer, IndexedDB snapshots.
-3. **Widgets:** number, enum, mission grid, bitmask, list.
-4. **Game definitions and sections:** `xwing.js` and `tie.js` can be built in parallel. Pilot and training first, then historic combat and stats, then campaign (X-Wing tours and medals, TIE battles and objectives), then Raw/Hex.
-5. **Helpers:** bulk actions, presets, derived-value sync.
-6. **Validation:** hard limits and soft warnings.
-7. **Polish:** themes, keyboard and screen-reader support, help panel, tooltips (noting which regions are unknown and preserved), short README section.
+- [x] **0. Verification script:** `tools/test.js` loads the browser scripts into a `vm` context and checks every sample. The one-off probe scripts used to settle the open points are removed.
+- [x] **1. Core and shell:** binary helpers, codec, game registry, detection, open, save, new, banner errors, dirty tracking.
+- [x] **2. State:** original snapshot, undo/redo, modified highlighting, Changes drawer, IndexedDB snapshots.
+- [x] **3. Widgets:** number, enum, mission grid, bitmask, list.
+- [x] **4. Game definitions and sections:** `xwing.js` and `tie.js`, including Raw/Hex. Statistics use a table beside a bordered list in both games; the TIE kills list flows into two columns and drops to one when the filter leaves 12 rows or fewer.
+- [x] **5. Helpers:** bulk actions, a "Top Ace" preset per game, "Reset to new pilot", derived-value sync.
+- [x] **6. Validation:** hard limits and soft warnings, shown inline.
+- [ ] **7. Polish:**
+  - [x] Light and dark themes, responsive layout, keyboard shortcuts.
+  - [x] Tooltips on every button, dropdown and input (checked by the page test), with hints on the less obvious fields.
+  - [x] README with the version and version history, LICENSE (CC BY-NC-SA 4.0), and a footer with version, GitHub Pages and source links.
+  - [x] Publish to GitHub and enable GitHub Pages.
+  - [x] Manual browser, keyboard and narrow-viewport pass.
+  - [ ] Help panel, including notes on which byte regions are unknown and preserved.
+  - [ ] Screen-reader and contrast pass on the tables and both themes.
+
+### Still open
+
+- [ ] Check the 1706-byte X-Wing layout (+1 shift from byte 735) and the 642/647 current-tour bytes in the game.
+- [ ] Confirm the values of a new blank pilot against a pilot created in each game.
+- [ ] Optional action to set a tour's status and operations count from its scored operations (see `TOPACE.PLT` Tour 4), and one to fill scores for completed items.
+- [ ] A "Rookie" preset built from `ROOKIE.PLT`.
+- [ ] Rank-versus-score warning, only if the samples or documents give real thresholds.
+- [ ] Supply the TIE PDFs and `Offsets.xlsx` as text or CSV, if they turn up.
+- [ ] Optional workflow that runs `node tools/test.js` on each push.
 
 ## Decisions made
 
@@ -154,10 +171,13 @@ Status: phases 0-6 are implemented and pass `node tools/test.js` (54 checks) and
 - **1706-byte `.PLT` samples:** accepted with a +1 shift from offset 735 (see Findings); the app shows a banner saying the layout is inferred. The 3410-byte X-Wing variant is accepted too.
 - **Sample files:** keep them under `reference/` only (assumed; copy a few into a `samples/` folder if you want them deployed or tested from there).
 - **Layout:** sidebar sections, multiple classic scripts, one file per game.
+- **Form layout:** Pilot and Medals are vertical lists with each label next to its control; Statistics place a table beside a bordered "weapons and losses" list; block headings (and filter boxes) share one heading row so borders line up.
+- **Publishing:** the repository is public with the `reference` folder as committed, including third-party tools and documents.
+- **Versioning:** the version appears in `README.md` (heading and history table) and `index.html` (meta tag and footer). It changes only with the owner's permission.
 - **Unreadable reference files:** skipped for now; the PDFs and `Offsets.xlsx` may be added later as text or CSV.
 
 ## Open points
 
-1. **Preset contents:** define "Rookie" and "Top Ace" from the samples (`ROOKIE.PLT`, `TOPACE.PLT`, `TOPACE.TFR`).
-2. **Rank versus score warning:** drop it if the samples give no thresholds.
+1. **Preset contents:** "Top Ace" is built from the `TOPACE` samples. A "Rookie" preset from `ROOKIE.PLT` is still to do.
+2. **Rank versus score warning:** drop it if the samples give no thresholds (none found so far).
 3. **Derived sync:** prompted, never silent, unless you ask otherwise.

@@ -1,6 +1,6 @@
 # Pilot Editor
 
-**Version 1.0.0**
+**Version 1.1.0**
 
 A browser-based editor for X-Wing (`.plt`) and TIE Fighter (`.tfr`) pilot files. It runs entirely in your browser, so files stay on your computer.
 
@@ -57,4 +57,5 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International. See [LI
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.1.0 | 2026-11-08 | TIE Fighter statistics now match X-Wing: a bordered totals, weapons and losses list beside the kills table. The kills-by-ship-type list flows into two columns and drops to one when the filter leaves a short list. |
 | 1.0.0 | 2026-11-08 | First release: X-Wing and TIE Fighter editing, undo and redo, changes panel, warnings, presets, raw hex view, restore of opened files, GitHub Pages link and tooltips. |
