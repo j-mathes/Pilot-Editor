@@ -9,8 +9,8 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
 - **Formats**
   - X-Wing `.plt`: 1705 bytes (a 3410-byte variant with a duplicate second half also exists, e.g. `RUSTY.PLT`).
   - TIE `.tfr`: 3856 bytes = 1928-byte active pilot + 1928-byte backup half. In `TOPACE.TFR` the halves are identical; in `test.tfr` they differ.
-  - Sample `TOPACE.PLT`, `IPTOPACE.PLT` and `TOPACE.BAK` are 1706 bytes, which the legacy editor rejects. The extra byte appears to be at the end (to be verified in phase 0).
-- **Encoding:** little-endian throughout. TIE scores are signed 32-bit; everything else is unsigned.
+  - Sample `TOPACE.PLT`, `IPTOPACE.PLT` and `TOPACE.BAK` are 1706 bytes, which the legacy editor rejects. Phase 0 showed the extra byte is not at the end: everything from byte 735 on sits one byte later than in 1705-byte files (the extra byte is somewhere in the all-zero range 649-734). The app opens them with a +1 shift from offset 735 and says so in a banner.
+  - In the TIE samples the second half differs from the first in many files (a few to ~200 bytes), so it is a stale backup, not always a mirror.- **Encoding:** little-endian throughout. TIE scores are signed 32-bit; everything else is unsigned.
 - **Offsets** are hard-coded in long `switch` blocks in the legacy code. The new app expresses them once as data tables.
 - **Source authority:** `XW95PLT.LST` (a Universal Game Editor module) matches the legacy C# offsets and resolves the old TODOs: surface victories at 1587, kills from 1589, captures from 1637, lasers at 1685/1689/1693 (32-bit), missiles at 1697/1699/1701 (16-bit), craft lost at 1703. Prefer it, the C# code and the sample files over `x-wing.txt`, whose hex table is hand-typed and off by one against the code (and differs between its two copies).
 - **Tours:** tours 4 and 5 are 20 operations with 4 A/B choice pairs each, giving 24 slots. Tour 3 has 14 operations (`PFE.TXT` and code; `x-wing.txt` says 13).
@@ -28,10 +28,13 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
   - Both: opening a wrong-size file replaces the buffer before checking its size, and out-of-range bytes crash the load.
   - X-Wing: `WriteData` writes 4 bytes for fields read as 1 or 2 bytes (`PltRookieNum`, `CurrentTour`, `CurrentTourOpsComp`, tour ops-complete), spilling into neighbouring bytes. It also writes `CurrentTourOpsComp` at 647, which is never read.
   - X-Wing: the stats and historic-combat reads and writes are nested inside other loops, so they run repeatedly.
-- **Unverified sample observations (settle in phase 0)**
-  - `ROOKIE.PLT` has 0xFF bytes in the tour region (735-760); treat as "unset".
-  - In `TOPACE.PLT`, byte 647 holds 0x0E while 643-644 are zero; confirm which is the real current-tour operations count.
-  - 735 versus 736 for tour status; the Missile Boat scores at 328.
+- **Verified in phase 0 (against the samples)**
+  - Per-tour block at 743-750 (one byte per tour, 8 slots): the index of the last completed operation, 0xFF when none (`ROOKIE.PLT`: all 0xFF; `TOPACE.PLT`: 11, 11, 13; `RUSTY.PLT`: 5 with 6 operations done). The legacy editor never updates it, which is why edited files such as `RUSTY1.PLT` have stale 0xFF values. The new app keeps it equal to operations completed minus one.
+  - Tour status is at 735-739 and operations completed at 751-755 in 1705-byte files (`x-wing.txt`'s 736/752 matches the 1706-byte layout, not the 1705 one).
+  - The current-tour operation count is stored at both 642 and 647 (`TOPACE.PLT` 0x0E and 0x0E; `RUSTY.PLT` 6 and 6). The legacy read at 643 was wrong, and its 4-byte writes zeroed bytes 641-643 and 648 (0xFF) in files like `RUSTYx.PLT`.
+  - TIE "last mission completed" is 8 in every finished battle, whatever its mission count (`NEWACE10.TFR`, `TOPACE10.TFR`), so the legacy maximum of 8 is correct and 8 means finished. Secondary and bonus objectives are bitmasks (0xFF when all set; counts per battle are not reliable from the samples).
+  - TIE training-completed values seen: 0, 2, 4, 6. Missile Boat historic scores at 328 are used by the legacy code and show plausible values in `Tester2.tfr`.
+  - 3410-byte X-Wing files: `RUSTY.PLT` has identical halves, `RUSTYx.PLT` does not.
 - **Constraint:** Chrome blocks ES modules over `file://`, so all scripts must be classic scripts (no `type="module"`).
 - **Not readable by tooling (may be supplied later as text or CSV):** the three TIE PDFs, `Offsets.xlsx`, `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives.
 
@@ -80,7 +83,7 @@ Also carried over:
 - **Sections per game:** Pilot, Training, Historic Combat, Stats, Campaign, plus Medals (X-Wing only) and Raw/Hex (both).
   - **Historic Combat:** a ship-by-mission matrix (TIE) or group-by-mission matrix (X-Wing) replaces the 7 and 5 inner tabs.
   - **Stats:** a searchable, sortable list of NPC kill and capture counts; weapon accuracy shown as a bar with a percentage.
-  - **Campaign (TIE):** 13 collapsible battle cards with a status badge and progress bar, the real mission count per battle, "Secondary" and "Bonus" objective labels, and an Active Battle selector (legacy has none).
+  - **Campaign (TIE):** 13 collapsible battle cards with a status badge and a progress bar, "Secondary" and "Bonus" objective labels, "Last mission completed" limited to 0-8 (8 = finished, as the games use it), and an Active Battle selector (legacy has none).
   - **Campaign (X-Wing):** 5 tour cards with a status control and progress bar, correct 6A/6B-style operation labels, and only one Active tour at a time, kept in sync with the current tour.
   - **Raw/Hex:** a read-only hex view of the file with a changed-bytes diff against the original, to help with the unknown regions.
 - **Widgets:** number fields select on focus, clamp, show min/max in a tooltip and never throw on out-of-range loads (they show a warning chip); enum selects show full names (e.g. "Rebel Cruiser (CNVYR)"); TIE training-completed shows labelled options with unknown values still editable; the bitmask checklist clears a flag when unchecked.
@@ -132,7 +135,9 @@ Also carried over:
 
 ## Delivery order
 
-0. **Verification script:** dump the key offsets of every sample and settle the open points (see Findings): X-Wing current-tour operations at 643 versus 647, tour status at 735 versus 736, TIE Missile Boat scores at 328, the 1706-byte trailing byte, 0xFF in `ROOKIE.PLT`, and whether halves match. Build the round-trip test.
+Status: phases 0-6 are implemented and pass `node tools/test.js` (54 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (11 checks). Not yet done: a visual and keyboard pass in a real browser, the GitHub Pages check, the rank-versus-score warning, and the README section.
+
+0. **Verification script (done):** `tools/test.js` loads the browser scripts into a `vm` context and checks every sample. The one-off probe scripts used to settle the open points are removed.
 1. **Core and shell:** binary helpers, codec, game registry (with stub game files), detection, open, save, new, banner errors, dirty tracking.
 2. **State:** original snapshot, undo/redo, modified highlighting, Changes drawer, IndexedDB snapshots.
 3. **Widgets:** number, enum, mission grid, bitmask, list.
@@ -146,7 +151,7 @@ Also carried over:
 - **Output location:** the repo root `d:\Programming\Copilot\Pilot Editor\` is the app root (assumed; confirm if you want a subfolder).
 - **Byte parity with legacy:** write each field at its true width, not the legacy 4-byte writes.
 - **Backup half:** mirror the edited half into the duplicate half on save, with an open-time warning when they differ.
-- **1706-byte `.PLT` samples:** accept them, preserving the trailing byte, once phase 0 confirms the layout. Accept the 3410-byte X-Wing variant.
+- **1706-byte `.PLT` samples:** accepted with a +1 shift from offset 735 (see Findings); the app shows a banner saying the layout is inferred. The 3410-byte X-Wing variant is accepted too.
 - **Sample files:** keep them under `reference/` only (assumed; copy a few into a `samples/` folder if you want them deployed or tested from there).
 - **Layout:** sidebar sections, multiple classic scripts, one file per game.
 - **Unreadable reference files:** skipped for now; the PDFs and `Offsets.xlsx` may be added later as text or CSV.

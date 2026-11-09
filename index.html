@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pilot Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" id="brandMark" aria-hidden="true">P</span>
+      <div>
+        <h1 id="brandTitle">Pilot Editor</h1>
+        <p class="brand-sub">X-Wing and TIE Fighter pilot files</p>
+      </div>
+    </div>
+    <span class="file-chip" id="fileChip" hidden></span>
+
+    <div class="toolbar" role="toolbar" aria-label="Pilot file actions">
+      <button type="button" class="btn" id="btnOpen" title="Open (Ctrl+O)">Open</button>
+      <select id="newSelect" class="btn" aria-label="New pilot">
+        <option value="">New pilot...</option>
+      </select>
+      <button type="button" class="btn primary" id="btnSave" title="Save (Ctrl+S)" disabled>Save</button>
+      <button type="button" class="btn" id="btnSaveAs" title="Save As (Ctrl+Shift+S)" disabled>Save as</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+      <button type="button" class="btn" id="btnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
+      <select id="presetSelect" class="btn" aria-label="Presets" disabled></select>
+      <button type="button" class="btn" id="btnChanges" aria-expanded="false" aria-controls="drawer" disabled>
+        Changes <span class="count" id="changeCount" hidden></span>
+      </button>
+      <button type="button" class="btn" id="btnRestore" title="Copies of files as they were opened">Restore</button>
+      <label class="opt" title="On the first in-place save, also download the file as it was opened (.bak)">
+        <input type="checkbox" id="optBackup" checked> Backup original
+      </label>
+      <button type="button" class="btn" id="btnTheme" title="Switch light or dark theme">Theme</button>
+    </div>
+  </header>
+
+  <div class="banner info" id="banner" hidden>
+    <div>
+      <p id="bannerText"></p>
+      <ul id="bannerList"></ul>
+    </div>
+    <button type="button" class="btn small" id="bannerClose" aria-label="Dismiss message">Dismiss</button>
+  </div>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar" aria-label="Sections" hidden>
+      <ul id="navList"></ul>
+    </nav>
+
+    <main id="main" tabindex="-1">
+      <section class="landing" id="landing" aria-labelledby="landingTitle">
+        <h2 id="landingTitle">Open a pilot file</h2>
+        <p>Drop a file anywhere on this page, or choose one. Files stay on your computer; nothing is uploaded.</p>
+        <button type="button" class="btn primary large" id="landOpen">Open pilot file</button>
+        <div class="game-cards">
+          <article class="game-card" data-game-card="xwing">
+            <h3>X-Wing</h3>
+            <p>.plt pilot files</p>
+            <button type="button" class="btn" data-new="xwing">New X-Wing pilot</button>
+          </article>
+          <article class="game-card" data-game-card="tie">
+            <h3>TIE Fighter</h3>
+            <p>.tfr pilot files</p>
+            <button type="button" class="btn" data-new="tie">New TIE Fighter pilot</button>
+          </article>
+        </div>
+        <p class="hint" id="saveNote"></p>
+      </section>
+
+      <div id="editor" hidden>
+        <div class="pilot-head">
+          <label class="name-field">
+            <span>Pilot name</span>
+            <input type="text" id="pilotName" autocomplete="off" spellcheck="false"
+                   title="The game uses the file name as the pilot name; short names work best.">
+          </label>
+          <p class="summary" id="summary"></p>
+        </div>
+        <div id="sections"></div>
+      </div>
+    </main>
+
+    <aside class="drawer" id="drawer" aria-label="Changes and warnings" hidden>
+      <div class="drawer-head">
+        <h2>Changes <span class="count" id="warnCount" hidden></span></h2>
+        <button type="button" class="btn small" id="closeDrawer">Close</button>
+      </div>
+      <div class="drawer-actions">
+        <button type="button" class="btn small" id="revertAll">Revert all</button>
+      </div>
+      <ul class="plain" id="changeList"></ul>
+      <h3>Warnings</h3>
+      <ul class="plain warn-list" id="warnList"></ul>
+    </aside>
+  </div>
+
+  <dialog id="restoreDialog" aria-labelledby="restoreTitle">
+    <h2 id="restoreTitle">Files as they were opened</h2>
+    <p class="hint">Copies are kept in this browser only (the 20 most recent).</p>
+    <ul class="plain" id="restoreList"></ul>
+    <div class="dialog-actions"><button type="button" class="btn" id="closeRestore">Close</button></div>
+  </dialog>
+
+  <div class="drop-overlay" id="dropOverlay" hidden><p>Drop a pilot file to open it</p></div>
+
+  <script src="js/core/binary.js"></script>
+  <script src="js/core/codec.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/core/files.js"></script>
+  <script src="js/ui/widgets.js"></script>
+  <script src="js/ui/sections.js"></script>
+  <script src="js/ui/shell.js"></script>
+  <script src="js/games/xwing.js"></script>
+  <script src="js/games/tie.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
