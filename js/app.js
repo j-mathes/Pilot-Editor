@@ -81,6 +81,16 @@
     }).catch(err => shell.banner('Could not save: ' + err.message, 'error'));
   }
 
+  function closePilot() {
+    if (!session.state || !discardOk()) return;
+    session.state = null;
+    session.handle = null;
+    session.openedBytes = null;
+    shell.toggleDrawer(false);
+    shell.show(null);
+    shell.banner(null);
+  }
+
   function applyPreset(value) {
     const s = session.state;
     if (!s || value === '') return;
@@ -127,6 +137,7 @@
     $('landOpen').addEventListener('click', openPicker);
     $('btnSave').addEventListener('click', () => save(false));
     $('btnSaveAs').addEventListener('click', () => save(true));
+    $('btnClose').addEventListener('click', closePilot);
     $('btnUndo').addEventListener('click', () => session.state && session.state.undo());
     $('btnRedo').addEventListener('click', () => session.state && session.state.redo());
     $('btnChanges').addEventListener('click', () => shell.toggleDrawer());
@@ -184,7 +195,7 @@
     }
   }
 
-  PE.app = { init, session, loadBytes, newPilot, save };
+  PE.app = { init, session, loadBytes, newPilot, save, closePilot };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

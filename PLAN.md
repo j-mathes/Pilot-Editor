@@ -104,7 +104,7 @@ Also carried over:
 
 ## UI modernization
 
-- **Layout:** header toolbar (New X-Wing, New TIE, Open, Save, Save As) with a persistent pilot summary, a left sidebar of sections, and one scrolling panel. No nested tabs.
+- **Layout:** header toolbar (New X-Wing, New TIE, Open, Save, Save As, Close) with a persistent pilot summary, a left sidebar of sections, and one scrolling panel. No nested tabs.
 - **Sections per game:** Pilot, Training, Historic Combat, Stats, Campaign, plus Medals (X-Wing only) and Raw/Hex (both).
   - **Historic Combat:** a ship-by-mission matrix (TIE) or group-by-mission matrix (X-Wing) replaces the 7 and 5 inner tabs.
   - **Stats:** a searchable, sortable list of NPC kill and capture counts; weapon accuracy shown as a bar with a percentage.

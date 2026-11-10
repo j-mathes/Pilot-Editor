@@ -152,6 +152,28 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert(!right.closest('.table-wrap').hidden);
   });
 
+  check('Close returns to the start page and asks before discarding changes', () => {
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    assert.strictEqual($('btnClose').disabled, false);
+    PE.app.session.state.set('pilot.rank', 1);
+    let asked = 0;
+    w.confirm = () => { asked++; return false; };
+    $('btnClose').click();
+    assert.strictEqual(asked, 1);
+    assert(PE.app.session.state, 'cancelled close must keep the pilot');
+    w.confirm = () => { asked++; return true; };
+    $('btnClose').click();
+    assert.strictEqual(PE.app.session.state, null);
+    assert(!$('landing').hidden && $('editor').hidden && $('sidebar').hidden);
+    assert.strictEqual(d.body.dataset.game, undefined);
+    assert.strictEqual($('btnClose').disabled, true);
+    assert.strictEqual($('btnSave').disabled, true);
+    assert($('banner').hidden);
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    $('btnClose').click();
+    assert.strictEqual(asked, 2, 'a clean pilot closes without asking');
+  });
+
   check('no script errors', () => assert.deepStrictEqual(errors, []));
   console.log(passed + ' UI checks passed');
   w.close();

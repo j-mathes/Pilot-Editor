@@ -52,7 +52,7 @@
     chip.hidden = !s;
     $('btnUndo').disabled = !s || !s.canUndo();
     $('btnRedo').disabled = !s || !s.canRedo();
-    for (const id of ['btnSave', 'btnSaveAs', 'btnChanges', 'presetSelect']) $(id).disabled = !s;
+    for (const id of ['btnSave', 'btnSaveAs', 'btnClose', 'btnChanges', 'presetSelect']) $(id).disabled = !s;
     if (!s) { document.title = 'Pilot Editor'; return; }
     const dirty = s.isDirty();
     chip.textContent = s.name + s.def.ext[0] + ' · ' + s.length + ' bytes' + (dirty ? ' · unsaved changes' : '');
