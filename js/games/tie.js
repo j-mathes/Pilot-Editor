@@ -41,6 +41,16 @@
     ['Escort Prison Ship', 'Deliver Prisoners', 'Attack Bothuwui', 'Attack on Kothlis', 'Bothan Treachery', 'Recon Military Summit', 'Delay Strike Force'],
     ['Surprise Attack', 'Capture the Turncoat', 'Track Down Rebels', 'Missile Boat Trouble', 'Return to Vorknkx', 'Corvette Attack', 'Zaarin Takes the Bait', 'The Trap is Sprung']
   ];
+  // Craft and role per mission for battles 1-7, from the original mission file names (F, I, B, A, G, D = craft; M = flight leader, W = wingman).
+  const CRAFT_LETTER = { F: 'TIE Fighter', I: 'TIE Interceptor', B: 'TIE Bomber', A: 'TIE Advanced', G: 'Assault Gunboat', D: 'TIE Defender' };
+  const MISSION_CRAFT = [
+    ['FM', 'FM', 'BM', 'IM', 'GM', 'GM'], ['FW', 'BW', 'IW', 'GW', 'FW'], ['BM', 'BM', 'FM', 'GM', 'BM', 'GM'],
+    ['FM', 'BM', 'BM', 'IM', 'GM'], ['IW', 'GW', 'GW', 'AW', 'GW'], ['AW', 'AW', 'GW', 'GW'], ['AM', 'AM', 'AW', 'DW', 'DM']
+  ];
+  const craftNote = (b, m) => {
+    const code = MISSION_CRAFT[b] && MISSION_CRAFT[b][m];
+    return code ? ' (' + CRAFT_LETTER[code[0]] + ', ' + (code[1] === 'M' ? 'flight leader' : 'wingman') + ')' : '';
+  };
   // Objectives set in the original Top Ace pilots (TOPACE10), which have every goal of battles 1-10 done.
   const SECONDARY_GOALS = [5, 4, 4, 3, 5, 3, 2, 2, 3, 3];
   const BONUS_GOALS = [6, 4, 5, 2, 5, 4, 4, 4, 6, 5];
@@ -65,7 +75,7 @@
   fields.push(sel('pilot.difficulty', 'u8', 3, 'Difficulty', DIFFICULTY));
   fields.push(num('pilot.score', 'i32', 4, 'Score', { min: 0, max: MAX_SCORE, hint: 'Accumulated score, which decides the rank in the Imperial Navy.' }));
   fields.push(num('pilot.skill', 'u16', 8, 'Skill level', { hint: 'Skill level of the pilot (0 = novice, 65535 = super ace).' }));
-  fields.push(sel('pilot.secret', 'u8', 10, 'Secret Order rank', SECRET, { hint: 'Rank in the Emperor\'s Secret Order. The guide describes six levels, earned only through secondary goals: 20,000 points and 2 missions with secondary goals, then 50,000/4, 100,000/6, 250,000/9, 400,000/12 and 800,000/15. The file stores values 0 to 9.' }));
+  fields.push(sel('pilot.secret', 'u8', 10, 'Secret Order rank', SECRET, { hint: 'Rank in the Emperor\'s Secret Order. In the original game 0 = None up to 6 = Emperor\'s Hand, the six levels of the strategy guide, earned only through secondary goals: 20,000 points and 2 missions with secondary goals, then 50,000/4, 100,000/6, 250,000/9, 400,000/12 and 800,000/15. Values 7 to 9 come from the offsets list and the Top Ace pilots; no document describes them.' }));
 
   SHIPS.forEach((name, i) => {
     fields.push(num('training.' + i + '.next', 'u8', 29 + i, name + ' next training level', { softMax: 21, hint: 'The next training level offered for this craft.' }));
@@ -146,7 +156,7 @@
       { type: 'form', items: [{ id: 'battle.' + b + '.secondary', label: 'Secondary objectives' }, { id: 'battle.' + b + '.bonus', label: 'Bonus objectives' }] },
       {
         type: 'table', title: 'Mission scores', columns: ['Score'],
-        rows: Array.from({ length: MISSIONS[b] }, (_, m) => ({ label: (m + 1) + ': ' + MISSION_NAMES[b][m], cells: ['battle.' + b + '.score.' + m] })),
+        rows: Array.from({ length: MISSIONS[b] }, (_, m) => ({ label: (m + 1) + ': ' + MISSION_NAMES[b][m] + craftNote(b, m), cells: ['battle.' + b + '.score.' + m] })),
         actions: [{
           label: 'Mark battle finished', title: 'Set this battle to Done, last mission 8, all objectives ticked (scores are not changed)',
           run: api => {

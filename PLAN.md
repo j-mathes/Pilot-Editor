@@ -55,6 +55,9 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
   - Tour 4 "Imperial Pursuit" and Tour 5 "B-wing", each with 20 numbered operations and 24 slots. The choice operations are 6, 8, 12 and 16 in Tour 4 and 11, 14, 17 and 20 in Tour 5, with `a` and `b` versions. The editor's slot order (1-5, 6a, 6b, 7, and so on) comes from the legacy editor; the guide does not say how the file stores the choice operations. All 48 titles are used as labels in that order.
   - Six B-Wing historical missions and six Bonus missions, now used as labels, plus the B-wing as a fourth proving ground craft with its own flight badge and battle patch.
   - Tour ribbons for Tours 4 and 5 and the Talons of Hoth and Shield of Yavin medals sit together in the medals case, which fits the offsets document pairing them with Tours 5 and 4. Rank and Kalidor Crescent scores are the same as in the original guide.
+- **"Chopping Block" articles** (`chopbloc.pdf`, `chopbloc2.pdf`; Game Developer magazine, February and April/May 1995, text extracted outside the repository). Part 1 is the primary source for the pilot file table that `Tie Fighter Mapping.txt` grew from; part 2 covers mission file structures, which the editor does not need:
+  - Confirms the 3,856-byte file (active pilot, then a backup written by the Personal Datapad), the craft order (TIE Fighter, Interceptor, Bomber, Advanced, Gunboat, Defender) and that the original game's Secret Order values run from 0 (None) to 6 (Emperor's Hand), matching the guide's six levels. Values 7 to 9 are described by no document.
+  - Mission file names give the craft and role for every mission of battles 1 to 7, now shown beside the mission titles.
 - **Not readable by tooling (may be supplied later as text or CSV):** `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives.
 
 ## Architecture
@@ -180,7 +183,7 @@ Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor a
 - [ ] Optional action to set a tour's status and operations count from its scored operations (see `TOPACE.PLT` Tour 4), and one to fill scores for completed items.
 - [ ] A "Rookie" preset built from `ROOKIE.PLT`.
 - [x] TIE rules from the strategy guide: mission titles on every score row, rank-versus-score warnings, hints for rank, Secret Order and battle order, dimmed objective boxes beyond the known goal counts, and two Top Ace presets (battles 1-10 and 1-7) that reproduce the original samples' objective masks.\n- [x] X-Wing rules from the offsets document and the strategy guide: soft rank-versus-score warnings with the guide's thresholds, medal-versus-tour-completion warnings, medal and proving ground hints, tour, operation and historical mission titles, "Flight Cadet" and "Flight Officer" rank names, and a read-only "level the recorded scores support" for the Kalidor Crescent with a Sync button. Health value 2 is now labelled "Killed".
-- [ ] Supply the TIE PDFs as text, if they turn up (the offsets document has been supplied, in part).
+- [x] The TIE Fighter strategy guide, the offsets document and the two Chopping Block articles have been supplied as text and used.
 - [ ] Optional workflow that runs `node tools/test.js` on each push.
 
 ## Decisions made
@@ -194,7 +197,7 @@ Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor a
 - **Form layout:** Pilot and Medals are vertical lists with each label next to its control; Statistics place a table beside a bordered "weapons and losses" list; block headings (and filter boxes) share one heading row so borders line up.
 - **Publishing:** the repository is public with the `reference` folder as committed, including third-party tools and documents.
 - **Versioning:** the version appears in `README.md` (heading and history table) and `index.html` (meta tag and footer). It changes only with the owner's permission.
-- **Unreadable reference files:** skipped for now; the PDFs and `Offsets.xlsx` may be added later as text or CSV.
+- **Unreadable reference files:** `xw95plt.mdl`, `GAMEDAT.UGE` and the archives are skipped; the strategy guides and offsets document were supplied as text and are used.
 
 ## Open points
 
