@@ -57,10 +57,10 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
   });
 
   check('number input clamps and shows a warning for derived data', () => {
-    const lvl = d.querySelector('input[aria-label="X-Wing training level"]');
+    const lvl = d.querySelector('#card-tour0 input[aria-label="Operations completed"]');
     lvl.value = '99';
     lvl.dispatchEvent(new w.Event('change'));
-    assert.strictEqual(lvl.value, '8');
+    assert.strictEqual(lvl.value, '12');
     const craft = d.querySelector('input[aria-label="Laser craft hits"]');
     craft.value = '999999';
     craft.dispatchEvent(new w.Event('change'));

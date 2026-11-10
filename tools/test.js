@@ -248,8 +248,11 @@ test('undo restores the exact original bytes; redo reapplies', () => {
 
 test('values are clamped to field limits', () => {
   const st = load('RUSTY1.PLT');
-  st.set('training.0.level', 99);
-  assert.strictEqual(st.get('training.0.level'), 8);
+  st.set('training.0.level', 300);
+  assert.strictEqual(st.get('training.0.level'), 255);
+  st.set('training.0.level', 9);
+  assert.strictEqual(st.get('training.0.level'), 9);
+  assert.strictEqual(st.warningsFor('training.0.level').length, 0);
   st.set('pilot.experience', -5);
   assert.strictEqual(st.get('pilot.experience'), 0);
 });

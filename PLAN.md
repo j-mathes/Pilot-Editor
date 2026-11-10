@@ -27,7 +27,7 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
   - TIE: unchecking a secondary or bonus objective never clears its flag.
   - Both: opening a wrong-size file replaces the buffer before checking its size, and out-of-range bytes crash the load.
   - X-Wing: `WriteData` writes 4 bytes for fields read as 1 or 2 bytes (`PltRookieNum`, `CurrentTour`, `CurrentTourOpsComp`, tour ops-complete), spilling into neighbouring bytes. It also writes `CurrentTourOpsComp` at 647, which is never read.
-  - X-Wing: the stats and historic-combat reads and writes are nested inside other loops, so they run repeatedly.
+  - X-Wing: the stats and historic-combat reads and writes are nested inside other loops, so they run repeatedly.\n  - X-Wing: the training level boxes have a maximum of 8, so opening a pilot with level 9 throws \"Value of '9' is not valid for 'Value'\". The Collector's guide says the Proving Ground has eight main levels but can be flown past them, so the web editor has no cap of 8 (limit 255) and keeps whatever the file holds.
 - **Verified in phase 0 (against the samples)**
   - Per-tour block at 743-750 (one byte per tour, 8 slots): the index of the last completed operation, 0xFF when none (`ROOKIE.PLT`: all 0xFF; `TOPACE.PLT`: 11, 11, 13; `RUSTY.PLT`: 5 with 6 operations done). The legacy editor never updates it, which is why edited files such as `RUSTY1.PLT` have stale 0xFF values and why a user's Tour 5 repairs with the legacy editor sent the game to the wrong missions. It is a slot position, not a count: for Tours 4 and 5 it points at the slot of the operation flown (see `NOKSP.PLT` below), and the new app sets it from Operations completed.
   - `NOKSP.PLT` (a real save from the GOG 1998 version, submitted by a player; its Tours 1 to 3 are empty and its Tour 5 was hand-edited with the legacy editor):
@@ -160,7 +160,7 @@ Also carried over:
 
 ## Delivery order
 
-Status: version 1.2.0 is published at https://github.com/j-mathes/Pilot-Editor and on GitHub Pages (https://j-mathes.github.io/Pilot-Editor/). Phases 0-6 are implemented and pass `node tools/test.js` (55 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (13 checks). The version number changes only when the owner says so.
+Status: version 1.2.1 is published at https://github.com/j-mathes/Pilot-Editor and on GitHub Pages (https://j-mathes.github.io/Pilot-Editor/). Phases 0-6 are implemented and pass `node tools/test.js` (55 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (13 checks). The version number changes only when the owner says so.
 
 - [x] **0. Verification script:** `tools/test.js` loads the browser scripts into a `vm` context and checks every sample. The one-off probe scripts used to settle the open points are removed.
 - [x] **1. Core and shell:** binary helpers, codec, game registry, detection, open, save, new, banner errors, dirty tracking.

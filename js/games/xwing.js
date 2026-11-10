@@ -100,7 +100,7 @@
   }));
 
   SHIPS.forEach((name, i) => {
-    fields.push(num('training.' + i + '.level', 'u8', 134 + i, name + ' training level', { max: 8, hint: 'Proving ground levels completed (0 to 8). Completing level 8 earns that craft\'s flight badge.' }));
+    fields.push(num('training.' + i + '.level', 'u8', 134 + i, name + ' training level', { hint: 'Proving ground levels completed. There are 8 main levels (completing level 8 earns that craft\'s flight badge), but the course continues past them and saves with 9 have been seen.' }));
     fields.push(num('training.' + i + '.score', 'u32', 38 + 4 * i, name + ' best score', { softMax: 999999, hint: 'Best proving ground score for this craft.' }));
   });
 
