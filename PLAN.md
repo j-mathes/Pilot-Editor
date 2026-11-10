@@ -160,7 +160,7 @@ Also carried over:
 
 ## Delivery order
 
-Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor and on GitHub Pages (https://j-mathes.github.io/Pilot-Editor/). Phases 0-6 are implemented and pass `node tools/test.js` (55 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (13 checks). The version number changes only when the owner says so.
+Status: version 1.2.0 is published at https://github.com/j-mathes/Pilot-Editor and on GitHub Pages (https://j-mathes.github.io/Pilot-Editor/). Phases 0-6 are implemented and pass `node tools/test.js` (55 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (13 checks). The version number changes only when the owner says so.
 
 - [x] **0. Verification script:** `tools/test.js` loads the browser scripts into a `vm` context and checks every sample. The one-off probe scripts used to settle the open points are removed.
 - [x] **1. Core and shell:** binary helpers, codec, game registry, detection, open, save, new, banner errors, dirty tracking.
