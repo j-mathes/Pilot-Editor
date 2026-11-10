@@ -129,6 +129,32 @@ test('X-Wing rank, medal and Kalidor rules use the offsets document', () => {
   assert(rookie.warningsFor('pilot.rank').some(x => /rank of Captain/.test(x.text)));
 });
 
+test('TIE: mission names cover every score slot, rank warnings and Top Ace presets', () => {
+  const tie = PE.games.tie;
+  assert(tie.fields.every(f => !/undefined/.test(f.label)), 'a label has no mission name');
+  assert(tie.fields.some(f => f.label === 'Battle 13 mission 8 (The Trap is Sprung) score'));
+  assert.strictEqual(load('RUSTY.tfr').warningsFor('pilot.rank').length, 0);
+  assert.strictEqual(load('TOPACE10.TFR').warningsFor('pilot.rank').length, 0);
+  const t = load('RUSTY2.tfr');
+  t.set('pilot.rank', 5);
+  assert(t.warningsFor('pilot.rank').some(x => /General normally needs a score of 500,000/.test(x.text)));
+  t.set('pilot.rank', 0);
+  t.set('pilot.score', 60000);
+  assert(t.warningsFor('pilot.rank').some(x => /rank of Lieutenant/.test(x.text)));
+  const ref = load('TOPACE10.TFR');
+  const mine = load('RUSTY2.tfr');
+  mine.batch(api => tie.presets[0].run(api));
+  for (let b = 0; b < 10; b++) {
+    assert.strictEqual(mine.get('battle.' + b + '.secondary'), ref.get('battle.' + b + '.secondary'), 'secondary ' + b);
+    assert.strictEqual(mine.get('battle.' + b + '.bonus'), ref.get('battle.' + b + '.bonus'), 'bonus ' + b);
+  }
+  const ref7 = load('TOPACE7.TFR');
+  const mine7 = load('RUSTY2.tfr');
+  mine7.batch(api => tie.presets[1].run(api));
+  for (let b = 0; b < 7; b++) assert.strictEqual(mine7.get('battle.' + b + '.secondary'), ref7.get('battle.' + b + '.secondary'));
+  assert.strictEqual(mine7.get('pilot.secret'), ref7.get('pilot.secret'));
+});
+
 test('RUSTY.PLT (3410 bytes)', () => {
   const st = load('RUSTY.PLT');
   assert.strictEqual(st.get('tour.0.status'), 1);

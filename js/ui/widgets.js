@@ -115,8 +115,12 @@
         });
         return box;
       });
-      const wrap = h('span', { class: 'field flags', title: f.hint }, 
-        boxes.map((b, i) => h('label', { title: f.bits[i] }, b, h('span', null, String(i + 1)))));
+      const wrap = h('span', { class: 'field flags', title: f.hint },
+        boxes.map((b, i) => {
+          const unused = f.used !== undefined && i >= f.used;
+          const title = unused ? f.bits[i] + ' (no goal seen for this slot in the original Top Ace pilots)' : f.bits[i];
+          return h('label', { title, class: unused ? 'unused' : null }, b, h('span', null, String(i + 1)));
+        }));
       const chip = h('span', { class: 'chip', hidden: true });
       wrap.append(chip);
       function update() {

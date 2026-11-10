@@ -9,8 +9,8 @@
   const sel = (id, type, offset, label, labels, extra) =>
     Object.assign({ id, type, offset, label, kind: 'enum', options: options(labels), max: labels.length - 1 }, extra);
   const chk = (id, offset, label) => ({ id, type: 'u8', offset, label, kind: 'bool' });
-  const flags = (id, offset, label, bitLabel) =>
-    ({ id, type: 'u8', offset, label, kind: 'flags', hint: 'Each box is one objective; tick the ones completed.', bits: Array.from({ length: 8 }, (_, i) => bitLabel + ' ' + (i + 1)) });
+  const flags = (id, offset, label, bitLabel, hint, used) =>
+    ({ id, type: 'u8', offset, label, kind: 'flags', hint, used, bits: Array.from({ length: 8 }, (_, i) => bitLabel + ' ' + (i + 1)) });
 
   const MAX_SCORE = 2046820351; // 0x79FFFFFF, the game's limit for 'long' values
 
@@ -25,6 +25,27 @@
     'Battle for Honor', 'Arms Race', 'Treachery at Ottega', 'Strategic Warfare', 'TIE Defender Technology',
     'New Threats', 'Hunt for Zaarin', 'Prelude to Endor', "The Emperor's Will"];
   const MISSIONS = [6, 5, 6, 5, 5, 4, 5, 6, 6, 6, 7, 7, 8];
+  // Mission titles from the Collector's CD-ROM strategy guide.
+  const MISSION_NAMES = [
+    ['Patrol Jump Point D-34', 'Red Alert', 'Counter-Attack', 'Outpost D-34 Has Fallen', 'Attack Rebel Lt. Cruiser', 'Destroy the Lulsla'],
+    ['Respond to S.O.S.', 'Intercept Attack', 'Rescue War Refugees', 'Capture Enemies', 'Guard Resupply'],
+    ['Load Base Equipment', 'Destroy Pirate Outpost', 'Hold Position', 'Guard Space Station NL-1', 'Thrawn Inspects NL-1', 'Wait for Relief Forces'],
+    ['Escort Convoy', 'Attack the Nharwaak', 'Defend Tech Center', 'Diplomatic Meeting', 'Rebel Arms Deal'],
+    ['Mineclearing', 'Assault Gunboat Recon', 'Convoy Attack', 'Tactical Superiority', 'Capture Harkov'],
+    ['Protect Prototypes', 'Prevent Rebel Ambush', 'Convoy Escort', 'Punitive Raid'],
+    ['Trap the Protector', 'Destroy the Akaga', 'Retribution', 'TIE Defender', 'Save the Emperor'],
+    ['Evacuate TIE Advanced Plants', 'Save TIE Advanced Factory', 'Secure TIE Advanced Plant', 'Supply TIE Advanced Plant', 'Capture Mag Pulse Weapon', 'Trapped'],
+    ['Capture Platform', 'Hold Platform', 'Protect Evacuation', 'Escort to Rendezvous', 'Trapped by Pirates!', 'Transfer Prototypes'],
+    ['Ransom', 'Rescue', 'Under the Gun', 'Missile Boat Diplomacy', 'Rebel Assault', 'Eliminate TIE Defender Factory'],
+    ['Intercept Convoy', 'Preemptive Strike', 'Bait and Switch', 'An Unexpected Attack', 'The Real Thing', 'Protect Vorknkx Project', 'Evacuate'],
+    ['Escort Prison Ship', 'Deliver Prisoners', 'Attack Bothuwui', 'Attack on Kothlis', 'Bothan Treachery', 'Recon Military Summit', 'Delay Strike Force'],
+    ['Surprise Attack', 'Capture the Turncoat', 'Track Down Rebels', 'Missile Boat Trouble', 'Return to Vorknkx', 'Corvette Attack', 'Zaarin Takes the Bait', 'The Trap is Sprung']
+  ];
+  // Objectives set in the original Top Ace pilots (TOPACE10), which have every goal of battles 1-10 done.
+  const SECONDARY_GOALS = [5, 4, 4, 3, 5, 3, 2, 2, 3, 3];
+  const BONUS_GOALS = [6, 4, 5, 2, 5, 4, 4, 4, 6, 5];
+  // Accumulated score for each rank, from the guide's scoring appendix.
+  const RANK_POINTS = [0, 20000, 50000, 100000, 250000, 500000];
   const NPC = ['X-Wing', 'Y-Wing', 'A-Wing', 'B-Wing', 'TIE Fighter', 'TIE Interceptor', 'TIE Bomber', 'TIE Advanced',
     'TIE Defender', 'TIE New 1', 'TIE New 2', 'Missile Boat', 'T-Wing', 'Z-95 Headhunter', 'R-41 Starchaser',
     'Assault Gunboat', 'Tyderian Shuttle', 'Escort Shuttle', 'Patrol Craft', 'Scout Craft', 'Transport',
@@ -40,11 +61,11 @@
 
   const fields = [];
   fields.push(sel('pilot.health', 'u8', 1, 'Duty status', HEALTH));
-  fields.push(sel('pilot.rank', 'u8', 2, 'Rank', RANKS));
+  fields.push(sel('pilot.rank', 'u8', 2, 'Rank', RANKS, { hint: 'Score needed (strategy guide): Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000.' }));
   fields.push(sel('pilot.difficulty', 'u8', 3, 'Difficulty', DIFFICULTY));
-  fields.push(num('pilot.score', 'i32', 4, 'Score', { min: 0, max: MAX_SCORE }));
+  fields.push(num('pilot.score', 'i32', 4, 'Score', { min: 0, max: MAX_SCORE, hint: 'Accumulated score, which decides the rank in the Imperial Navy.' }));
   fields.push(num('pilot.skill', 'u16', 8, 'Skill level', { hint: 'Skill level of the pilot (0 = novice, 65535 = super ace).' }));
-  fields.push(sel('pilot.secret', 'u8', 10, 'Secret Order rank', SECRET, { hint: 'Rank in the Emperor\'s Secret Order.' }));
+  fields.push(sel('pilot.secret', 'u8', 10, 'Secret Order rank', SECRET, { hint: 'Rank in the Emperor\'s Secret Order. The guide describes six levels, earned only through secondary goals: 20,000 points and 2 missions with secondary goals, then 50,000/4, 100,000/6, 250,000/9, 400,000/12 and 800,000/15. The file stores values 0 to 9.' }));
 
   SHIPS.forEach((name, i) => {
     fields.push(num('training.' + i + '.next', 'u8', 29 + i, name + ' next training level', { softMax: 21, hint: 'The next training level offered for this craft.' }));
@@ -61,16 +82,20 @@
     }
   });
 
-  fields.push(sel('battle.active', 'u8', 616, 'Active battle', BATTLES.map((n, i) => 'Battle ' + (i + 1) + ': ' + n)));
+  fields.push(sel('battle.active', 'u8', 616, 'Active battle', BATTLES.map((n, i) => 'Battle ' + (i + 1) + ': ' + n), {
+    hint: 'The battle the pilot is in. Order of play: battles 1 to 4 in any order, then 5 and/or 6, then 7, then 8 and/or 9, then 10, then 11 and/or 12, then 13.'
+  }));
   BATTLES.forEach((name, b) => {
     const p = 'Battle ' + (b + 1);
     fields.push(sel('battle.' + b + '.status', 'u8', 617 + b, p + ' status', BATTLE_STATUS));
     // The samples use 8 as "finished" in every battle, whatever its mission count.
     fields.push(num('battle.' + b + '.last', 'u8', 637 + b, p + ' last mission completed', { max: 8, hint: 'Last mission completed (0 = none). Finished battles use 8.' }));
-    fields.push(flags('battle.' + b + '.secondary', 913 + b, p + ' secondary objectives', 'Secondary'));
-    fields.push(flags('battle.' + b + '.bonus', 933 + b, p + ' bonus objectives', 'Bonus'));
+    fields.push(flags('battle.' + b + '.secondary', 913 + b, p + ' secondary objectives', 'Secondary',
+      'Secondary goals completed in this battle; they raise your rank in the Secret Order. Each box is the next goal of this kind.', SECONDARY_GOALS[b]));
+    fields.push(flags('battle.' + b + '.bonus', 933 + b, p + ' bonus objectives', 'Bonus',
+      'Bonus goals completed in this battle; they add to your score and help promotion in the Imperial Navy. Each box is the next goal of this kind.', BONUS_GOALS[b]));
     for (let m = 0; m < MISSIONS[b]; m++) {
-      fields.push(num('battle.' + b + '.score.' + m, 'u32', 986 + 32 * b + 4 * m, p + ' mission ' + (m + 1) + ' score', { max: MAX_SCORE }));
+      fields.push(num('battle.' + b + '.score.' + m, 'u32', 986 + 32 * b + 4 * m, p + ' mission ' + (m + 1) + ' (' + MISSION_NAMES[b][m] + ') score', { max: MAX_SCORE }));
     }
   });
 
@@ -121,7 +146,7 @@
       { type: 'form', items: [{ id: 'battle.' + b + '.secondary', label: 'Secondary objectives' }, { id: 'battle.' + b + '.bonus', label: 'Bonus objectives' }] },
       {
         type: 'table', title: 'Mission scores', columns: ['Score'],
-        rows: Array.from({ length: MISSIONS[b] }, (_, m) => ({ label: 'Mission ' + (m + 1), cells: ['battle.' + b + '.score.' + m] })),
+        rows: Array.from({ length: MISSIONS[b] }, (_, m) => ({ label: (m + 1) + ': ' + MISSION_NAMES[b][m], cells: ['battle.' + b + '.score.' + m] })),
         actions: [{
           label: 'Mark battle finished', title: 'Set this battle to Done, last mission 8, all objectives ticked (scores are not changed)',
           run: api => {
@@ -153,7 +178,7 @@
     {
       id: 'historic', title: 'Historic combat',
       blocks: [{
-        type: 'table', title: 'Missions (complete, score)', columns: ['Mission 1', 'Mission 2', 'Mission 3', 'Mission 4'],
+        type: 'table', title: 'Combat Chamber missions (complete, score)', columns: ['Mission 1', 'Mission 2', 'Mission 3', 'Mission 4'],
         rows: SHIPS.map((name, s) => ({
           label: name,
           cells: Array.from({ length: 4 }, (_, m) => ['hist.' + s + '.' + m + '.done', 'hist.' + s + '.' + m + '.score'])
@@ -192,6 +217,17 @@
 
   function warnings(get) {
     const out = [];
+    const rank = get('pilot.rank');
+    const score = get('pilot.score');
+    if (rank >= 1 && rank < RANK_POINTS.length && score < RANK_POINTS[rank]) {
+      out.push({ id: 'pilot.rank', level: 'info', text: RANKS[rank] + ' normally needs a score of ' + RANK_POINTS[rank].toLocaleString('en-US') + '; this pilot has ' + score.toLocaleString('en-US') + '.' });
+    }
+    for (let r = RANK_POINTS.length - 1; r > rank; r--) {
+      if (score >= RANK_POINTS[r]) {
+        out.push({ id: 'pilot.rank', level: 'info', text: 'A score of ' + score.toLocaleString('en-US') + ' normally earns the rank of ' + RANKS[r] + '.' });
+        break;
+      }
+    }
     if (get('stat.laserHit') > get('stat.laserFired')) out.push({ id: 'stat.laserHit', level: 'warn', text: 'Laser hits exceed lasers fired.' });
     if (get('stat.warheadHit') > get('stat.warheadFired')) out.push({ id: 'stat.warheadHit', level: 'warn', text: 'Warhead hits exceed warheads fired.' });
     const sum = sumNpc(get);
@@ -213,22 +249,28 @@
     return b;
   }
 
-  const presets = [{
-    label: 'Top Ace',
-    title: 'Max rank and skill, top Secret Order rank, first 10 battles finished (like the TOPACE10 sample)',
-    run: api => {
-      api.set('pilot.health', 0);
-      api.set('pilot.rank', 5);
-      api.set('pilot.skill', 65535);
-      api.set('pilot.secret', 9);
-      // Mirrors the TOPACE10 sample: the first 10 battles finished.
-      for (let b = 0; b < 10; b++) {
-        api.set('battle.' + b + '.status', 3);
-        api.set('battle.' + b + '.last', 8);
-        api.set('battle.' + b + '.secondary', 255);
-        api.set('battle.' + b + '.bonus', 255);
-      }
+  // The original game ships Top Ace pilots with battles 1-7 or 1-10 finished and every goal of those battles done.
+  const topAce = (battles, secret) => api => {
+    api.set('pilot.health', 0);
+    api.set('pilot.rank', 5);
+    api.set('pilot.skill', 65535);
+    api.set('pilot.secret', secret);
+    for (let b = 0; b < battles; b++) {
+      api.set('battle.' + b + '.status', 3);
+      api.set('battle.' + b + '.last', 8);
+      api.set('battle.' + b + '.secondary', (1 << SECONDARY_GOALS[b]) - 1);
+      api.set('battle.' + b + '.bonus', (1 << BONUS_GOALS[b]) - 1);
     }
+  };
+
+  const presets = [{
+    label: 'Top Ace: battles 1-10 done',
+    title: 'Max rank and skill, top Secret Order rank, battles 1 to 10 finished with all goals (like the TOPACE10 sample)',
+    run: topAce(10, 9)
+  }, {
+    label: 'Top Ace: battles 1-7 done',
+    title: 'Max rank and skill, Secret Order value 6, battles 1 to 7 finished with all goals (like the TOPACE7 sample)',
+    run: topAce(7, 6)
   }];
 
   PE.games.tie = {

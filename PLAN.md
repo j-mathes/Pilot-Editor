@@ -41,7 +41,12 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
   - Rank: Cadet start; Officer after about 5 proving ground levels plus a few missions; Lieutenant after all original training missions or 50,000 TOD points; Captain 100,000; Commander 250,000; General 500,000 (points "without dying").
   - Medals: Corellian Cross, Mantooine Medallion, Star of Alderaan, Shield of Yavin and Talons of Hoth are awarded for completing Tours 1 to 5 (bytes 10-14).
   - Kalidor Crescent levels need a score in a different Tour of Duty mission each: 10,000, 12,000, 14,000, 16,000, 18,000 and 20,000.
-- **Not readable by tooling (may be supplied later as text or CSV):** the three TIE PDFs, `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives.
+- **TIE Fighter Collector's CD-ROM strategy guide** (`Tie_Fighter_Collectors_Guide_text.pdf`, text extracted outside the repository; the PDF is in `.gitignore`):
+  - All 13 battles and their mission titles; the mission counts (6, 5, 6, 5, 5, 4, 5, 6, 6, 6, 7, 7, 8) match the code. Battles 8 to 10 came with Defender of the Empire and 11 to 13 with Imperial Pursuit. Order of play: battles 1 to 4 in any order, then 5 and/or 6, 7, 8 and/or 9, 10, 11 and/or 12, 13.
+  - Ranks by accumulated score: Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000. The Secret Order has six levels (20,000 / 50,000 / 100,000 / 250,000 / 400,000 / 800,000 points, needing 2 / 4 / 6 / 9 / 12 / 15 missions with secondary goals), while the file stores values 0 to 9.
+  - Each mission has primary, optional secondary and optional bonus goals. Secondary goals raise the Secret Order rank; bonus goals add score. The objective bytes are bitmasks counted goal by goal, not one bit per mission. The original Top Ace pilots (`TOPACE7`, `TOPACE10`, with every goal of battles 1 to 7 or 1 to 10 done) give the goal counts: secondary 5, 4, 4, 3, 5, 3, 2, 2, 3, 3 and bonus 6, 4, 5, 2, 5, 4, 4, 4, 6, 5; battles 11 to 13 are unknown.
+  - Historic combat is the Combat Chamber: four missions per craft, with the missile boat's four added by Defender of the Empire.
+- **Not readable by tooling (may be supplied later as text or CSV):** `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives. An X-Wing strategy guide text PDF has since been added and is not used yet.
 
 ## Architecture
 
@@ -164,7 +169,7 @@ Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor a
 - [ ] Confirm the values of a new blank pilot against a pilot created in each game.
 - [ ] Optional action to set a tour's status and operations count from its scored operations (see `TOPACE.PLT` Tour 4), and one to fill scores for completed items.
 - [ ] A "Rookie" preset built from `ROOKIE.PLT`.
-- [x] X-Wing rules from the offsets document: soft rank-versus-score warnings (Captain and above), medal-versus-tour-completion warnings, medal and proving ground hints, and a read-only "level the recorded scores support" for the Kalidor Crescent with a Sync button. Health value 2 is now labelled "Killed".
+- [x] TIE rules from the strategy guide: mission titles on every score row, rank-versus-score warnings, hints for rank, Secret Order and battle order, dimmed objective boxes beyond the known goal counts, and two Top Ace presets (battles 1-10 and 1-7) that reproduce the original samples' objective masks.\n- [x] X-Wing rules from the offsets document: soft rank-versus-score warnings (Captain and above), medal-versus-tour-completion warnings, medal and proving ground hints, and a read-only "level the recorded scores support" for the Kalidor Crescent with a Sync button. Health value 2 is now labelled "Killed".
 - [ ] Supply the TIE PDFs as text, if they turn up (the offsets document has been supplied, in part).
 - [ ] Optional workflow that runs `node tools/test.js` on each push.
 
