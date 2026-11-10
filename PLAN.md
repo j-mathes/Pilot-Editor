@@ -36,7 +36,12 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
   - TIE training-completed values seen: 0, 2, 4, 6. Missile Boat historic scores at 328 are used by the legacy code and show plausible values in `Tester2.tfr`.
   - 3410-byte X-Wing files: `RUSTY.PLT` has identical halves, `RUSTYx.PLT` does not.
 - **Constraint:** Chrome blocks ES modules over `file://`, so all scripts must be classic scripts (no `type="module"`).
-- **Not readable by tooling (may be supplied later as text or CSV):** the three TIE PDFs, `Offsets.xlsx`, `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives.
+- **Offsets document (contents of `Offsets.xlsx`, pasted by the owner; partial):**
+  - Agrees with the code for offsets 2, 3, 4, 8, 10-12, 38-53 and 134-137. Names offset 8 "Rookie number" (Novice, Officer, Veteran, Ace, Top Ace; cut-offs not given), health value 2 "Killed", and calls training the "proving ground" (8 levels; level 8 earns a craft's flight badge).
+  - Rank: Cadet start; Officer after about 5 proving ground levels plus a few missions; Lieutenant after all original training missions or 50,000 TOD points; Captain 100,000; Commander 250,000; General 500,000 (points "without dying").
+  - Medals: Corellian Cross, Mantooine Medallion, Star of Alderaan, Shield of Yavin and Talons of Hoth are awarded for completing Tours 1 to 5 (bytes 10-14).
+  - Kalidor Crescent levels need a score in a different Tour of Duty mission each: 10,000, 12,000, 14,000, 16,000, 18,000 and 20,000.
+- **Not readable by tooling (may be supplied later as text or CSV):** the three TIE PDFs, `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives.
 
 ## Architecture
 
@@ -159,8 +164,8 @@ Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor a
 - [ ] Confirm the values of a new blank pilot against a pilot created in each game.
 - [ ] Optional action to set a tour's status and operations count from its scored operations (see `TOPACE.PLT` Tour 4), and one to fill scores for completed items.
 - [ ] A "Rookie" preset built from `ROOKIE.PLT`.
-- [ ] Rank-versus-score warning, only if the samples or documents give real thresholds.
-- [ ] Supply the TIE PDFs and `Offsets.xlsx` as text or CSV, if they turn up.
+- [x] X-Wing rules from the offsets document: soft rank-versus-score warnings (Captain and above), medal-versus-tour-completion warnings, medal and proving ground hints, and a read-only "level the recorded scores support" for the Kalidor Crescent with a Sync button. Health value 2 is now labelled "Killed".
+- [ ] Supply the TIE PDFs as text, if they turn up (the offsets document has been supplied, in part).
 - [ ] Optional workflow that runs `node tools/test.js` on each push.
 
 ## Decisions made
@@ -179,5 +184,5 @@ Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor a
 ## Open points
 
 1. **Preset contents:** "Top Ace" is built from the `TOPACE` samples. A "Rookie" preset from `ROOKIE.PLT` is still to do.
-2. **Rank versus score warning:** drop it if the samples give no thresholds (none found so far).
+2. **Rank versus score warning:** done for X-Wing using the offsets document. TIE Fighter has no rank thresholds yet.
 3. **Derived sync:** prompted, never silent, unless you ask otherwise.

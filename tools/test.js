@@ -114,6 +114,21 @@ test('TOPACE.PLT: Tour 4 has scores but is Inactive, and the editor says so', ()
   assert(w.length === 1 && /15 operations and is the current tour/.test(w[0].text), JSON.stringify(w));
 });
 
+test('X-Wing rank, medal and Kalidor rules use the offsets document', () => {
+  const top = load('TOPACE.PLT');
+  const w = top.warningsFor('pilot.rank');
+  assert(w.length === 1 && /General normally needs 500,000/.test(w[0].text), JSON.stringify(w));
+  assert.strictEqual(top.warningsFor('medal.corellian').length, 0);
+  assert.strictEqual(top.derived(top.def.derived['medal.kalidorEarned']), 'Silver Scimitar');
+  assert.strictEqual(load('RUSTY.PLT').warningsFor('pilot.rank').length, 0);
+  const ip = load('IPTOPACE.PLT');
+  assert(ip.warningsFor('medal.mantooine').some(x => /Tour 2/.test(x.text)));
+  assert.strictEqual(ip.warningsFor('medal.yavin').length, 0);
+  const rookie = load('ROOKIE.PLT');
+  rookie.set('pilot.score', 120000);
+  assert(rookie.warningsFor('pilot.rank').some(x => /rank of Captain/.test(x.text)));
+});
+
 test('RUSTY.PLT (3410 bytes)', () => {
   const st = load('RUSTY.PLT');
   assert.strictEqual(st.get('tour.0.status'), 1);

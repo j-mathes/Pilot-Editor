@@ -12,7 +12,7 @@
     Object.assign({ id, type: 'u8', offset, label, kind: 'bool' }, extra);
 
   const RANKS = ['Cadet', 'Officer', 'Lieutenant', 'Captain', 'Commander', 'General'];
-  const HEALTH = ['Alive', 'Captured', 'Dead'];
+  const HEALTH = ['Alive', 'Captured', 'Killed'];
   const TOUR_STATUS = ['Inactive', 'Active', 'Incomplete', 'Complete'];
   const KALIDOR = ['None', 'Kalidor Crescent', 'Bronze Cluster', 'Silver Talons', 'Silver Scimitar', 'Gold Wings', 'Diamond Eyes'];
   const SHIPS = ['X-Wing', 'Y-Wing', 'A-Wing', 'B-Wing'];
@@ -36,20 +36,24 @@
   fields.push(sel('pilot.health', 'u8', 2, 'Health', HEALTH));
   fields.push(sel('pilot.rank', 'u8', 3, 'Rank', RANKS));
   fields.push(num('pilot.score', 'i32', 4, 'Tour of Duty points', { min: 0, softMax: 999999, hint: 'Total Tour of Duty points.' }));
-  fields.push(num('pilot.experience', 'u16', 8, 'Experience points', { hint: 'Experience (skill rating) of the pilot.' }));
+  fields.push(num('pilot.experience', 'u16', 8, 'Rookie number (experience)', {
+    hint: 'Rookie number. It sets the pilot\'s standing: Novice, Officer, Veteran, Ace or Top Ace (the cut-off values are not documented).'
+  }));
   fields.push(sel('tour.current', 'u8', 640, 'Current tour', ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4', 'Tour 5'], { hint: 'The tour the pilot is on now (stored 0-based in the file).' }));
   // Samples show the game keeps this count at both 642 and 647.
   fields.push(num('tour.currentOps', 'u8', 647, 'Operations completed (current tour)', { mirrors: [642], softMax: 20, hint: 'Operations completed in the current tour. The game keeps this value in two places (bytes 642 and 647); both are updated.' }));
 
   ['corellian', 'mantooine', 'alderaan', 'yavin', 'hoth'].forEach((k, i) => {
     const names = ['Corellian Cross', 'Mantooine Medallion', 'Star of Alderaan', 'Shield of Yavin', 'Talons of Hoth'];
-    fields.push(chk('medal.' + k, 10 + i, names[i]));
+    fields.push(chk('medal.' + k, 10 + i, names[i], { hint: 'Awarded for completing Tour ' + (i + 1) + '.' }));
   });
-  fields.push(sel('medal.kalidor', 'u8', 17, 'Kalidor Crescent', KALIDOR, { hint: 'Level of the Kalidor Crescent award.' }));
+  fields.push(sel('medal.kalidor', 'u8', 17, 'Kalidor Crescent', KALIDOR, {
+    hint: 'Each level needs a score in a different Tour of Duty mission: Kalidor Crescent 10,000, Bronze Cluster 12,000, Silver Talons 14,000, Silver Scimitar 16,000, Golden Wings 18,000, Diamond Eyes 20,000.'
+  }));
 
   SHIPS.forEach((name, i) => {
-    fields.push(num('training.' + i + '.level', 'u8', 134 + i, name + ' training level', { max: 8, hint: 'Highest training level completed (0 to 8).' }));
-    fields.push(num('training.' + i + '.score', 'u32', 38 + 4 * i, name + ' best score', { softMax: 999999 }));
+    fields.push(num('training.' + i + '.level', 'u8', 134 + i, name + ' training level', { max: 8, hint: 'Proving ground levels completed (0 to 8). Completing level 8 earns that craft\'s flight badge.' }));
+    fields.push(num('training.' + i + '.score', 'u32', 38 + 4 * i, name + ' best score', { softMax: 999999, hint: 'Best proving ground score for this craft.' }));
   });
 
   const HIST_FLAGS = [544, 560, 576, 592, 608];
@@ -92,7 +96,31 @@
     return s;
   };
 
+  // Needs a different mission for each level; the best scores go to the highest levels.
+  const KALIDOR_POINTS = [10000, 12000, 14000, 16000, 18000, 20000];
+  function kalidorLevel(get) {
+    const scores = [];
+    TOUR_SLOTS.forEach((slots, t) => {
+      for (let i = 0; i < slots; i++) scores.push(get('tour.' + t + '.op.' + i));
+    });
+    scores.sort((a, b) => b - a);
+    let level = 0;
+    for (let l = 1; l <= KALIDOR_POINTS.length; l++) {
+      let ok = true;
+      for (let i = 0; i < l; i++) if (scores[i] < KALIDOR_POINTS[l - 1 - i]) ok = false;
+      if (!ok) break;
+      level = l;
+    }
+    return level;
+  }
+
   const derived = {
+    'medal.kalidorEarned': {
+      label: 'Level the recorded scores support',
+      hint: 'Highest Kalidor Crescent level the operation scores in this file reach. Scores that were cleared will understate it.',
+      compute: g => KALIDOR[kalidorLevel(g)],
+      sync: { id: 'medal.kalidor', label: 'Set the Kalidor Crescent to this level', value: kalidorLevel }
+    },
     'stat.totalKills': { label: 'Total space victories', compute: g => sumIds(g, 'stat.kills.', NPC.length) },
     'stat.totalCaps': { label: 'Total space captures', compute: g => sumIds(g, 'stat.caps.', NPC.length) },
     'stat.laserAcc': { label: 'Laser craft accuracy', compute: g => pct(g('stat.laserCraft'), g('stat.laserFired')) },
@@ -142,7 +170,7 @@
     {
       id: 'training', title: 'Training',
       blocks: [{
-        type: 'table', title: 'Training simulator', columns: ['Level completed', 'Best score'],
+        type: 'table', title: 'Proving ground (training simulator)', columns: ['Level completed', 'Best score'],
         rows: SHIPS.map((name, i) => ({ label: name, cells: ['training.' + i + '.level', 'training.' + i + '.score'] })),
         actions: [{ label: 'Complete all levels', title: 'Set every training ship to level 8 (can be undone)', run: api => SHIPS.forEach((_, i) => api.set('training.' + i + '.level', 8)) }]
       }]
@@ -184,7 +212,7 @@
     { id: 'campaign', title: 'Tours of duty', blocks: [{ type: 'cards', cards: tourCards }] },
     {
       id: 'medals', title: 'Medals',
-      blocks: [{ type: 'form', layout: 'list', items: ['medal.corellian', 'medal.mantooine', 'medal.alderaan', 'medal.yavin', 'medal.hoth', 'medal.kalidor'] }]
+      blocks: [{ type: 'form', layout: 'list', items: ['medal.corellian', 'medal.mantooine', 'medal.alderaan', 'medal.yavin', 'medal.hoth', 'medal.kalidor', { derived: 'medal.kalidorEarned' }] }]
     },
     { id: 'raw', title: 'Raw bytes', blocks: [{ type: 'hex' }] }
   ];
@@ -206,8 +234,29 @@
     }
   }
 
+  // TOD points that normally earn each rank from Captain up (Lieutenant can also come from training missions).
+  const RANK_POINTS = [0, 0, 50000, 100000, 250000, 500000];
+  const MEDAL_KEYS = ['corellian', 'mantooine', 'alderaan', 'yavin', 'hoth'];
+
   function warnings(get) {
     const out = [];
+    const rank = get('pilot.rank');
+    const score = get('pilot.score');
+    if (rank >= 3 && rank < RANK_POINTS.length && score < RANK_POINTS[rank]) {
+      out.push({ id: 'pilot.rank', level: 'info', text: RANKS[rank] + ' normally needs ' + RANK_POINTS[rank].toLocaleString('en-US') + ' Tour of Duty points; this pilot has ' + score.toLocaleString('en-US') + '.' });
+    }
+    for (let r = RANK_POINTS.length - 1; r > rank; r--) {
+      if (r >= 2 && score >= RANK_POINTS[r]) {
+        out.push({ id: 'pilot.rank', level: 'info', text: score.toLocaleString('en-US') + ' Tour of Duty points normally earn the rank of ' + RANKS[r] + '.' });
+        break;
+      }
+    }
+    MEDAL_KEYS.forEach((key, t) => {
+      const complete = get('tour.' + t + '.status') === 3;
+      const medal = get('medal.' + key);
+      if (medal && !complete) out.push({ id: 'medal.' + key, level: 'info', text: 'This medal is awarded for completing Tour ' + (t + 1) + ', which is not marked Complete.' });
+      if (complete && !medal) out.push({ id: 'medal.' + key, level: 'info', text: 'Tour ' + (t + 1) + ' is Complete but its medal is not set.' });
+    });
     const active = [];
     TOUR_SLOTS.forEach((_, t) => { if (get('tour.' + t + '.status') === 1) active.push(t + 1); });
     if (active.length > 1) out.push({ level: 'warn', text: 'Tours ' + active.join(', ') + ' are all Active; only one should be.' });
