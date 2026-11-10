@@ -46,7 +46,12 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
   - Ranks by accumulated score: Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000. The Secret Order has six levels (20,000 / 50,000 / 100,000 / 250,000 / 400,000 / 800,000 points, needing 2 / 4 / 6 / 9 / 12 / 15 missions with secondary goals), while the file stores values 0 to 9.
   - Each mission has primary, optional secondary and optional bonus goals. Secondary goals raise the Secret Order rank; bonus goals add score. The objective bytes are bitmasks counted goal by goal, not one bit per mission. The original Top Ace pilots (`TOPACE7`, `TOPACE10`, with every goal of battles 1 to 7 or 1 to 10 done) give the goal counts: secondary 5, 4, 4, 3, 5, 3, 2, 2, 3, 3 and bonus 6, 4, 5, 2, 5, 4, 4, 4, 6, 5; battles 11 to 13 are unknown.
   - Historic combat is the Combat Chamber: four missions per craft, with the missile boat's four added by Defender of the Empire.
-- **Not readable by tooling (may be supplied later as text or CSV):** `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives. An X-Wing strategy guide text PDF has since been added and is not used yet.
+- **X-Wing: The Official Strategy Guide** (`XWing_Guide_text.pdf`, text extracted outside the repository; the PDF is in `.gitignore`). It is the original game's guide, so it covers three tours (12, 12 and 14 operations) and three craft, not the Collector's Edition's Tours 4 and 5 or the B-Wing:
+  - Rank names: Flight Cadet, Flight Officer, Lieutenant, Captain, Commander, General. Accumulated scores: Flight Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000.
+  - Kalidor Crescent: awarded for a score in a single mission; main medal 10,000, then Bronze Cluster 12,000, Silver Talons 14,000, Silver Scimitar 16,000, Golden Wings 18,000, Diamond Eyes 20,000. Whether each level needs a different mission is only stated in the offsets document, which the editor follows.
+  - Medals for completing tours: Corellian Cross (first), Mantooine Medallion (second), Star of Alderaan (third). One Flight Badge per craft for finishing the proving ground; one battle patch per historical mission.
+  - Titles for the three tours, their 38 operations, and the 18 X, Y and A-wing historical missions, now used as labels. Tours 4 and 5 and the B-Wing and Bonus missions have no titles.
+- **Not readable by tooling (may be supplied later as text or CSV):** `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives.
 
 ## Architecture
 
@@ -169,7 +174,7 @@ Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor a
 - [ ] Confirm the values of a new blank pilot against a pilot created in each game.
 - [ ] Optional action to set a tour's status and operations count from its scored operations (see `TOPACE.PLT` Tour 4), and one to fill scores for completed items.
 - [ ] A "Rookie" preset built from `ROOKIE.PLT`.
-- [x] TIE rules from the strategy guide: mission titles on every score row, rank-versus-score warnings, hints for rank, Secret Order and battle order, dimmed objective boxes beyond the known goal counts, and two Top Ace presets (battles 1-10 and 1-7) that reproduce the original samples' objective masks.\n- [x] X-Wing rules from the offsets document: soft rank-versus-score warnings (Captain and above), medal-versus-tour-completion warnings, medal and proving ground hints, and a read-only "level the recorded scores support" for the Kalidor Crescent with a Sync button. Health value 2 is now labelled "Killed".
+- [x] TIE rules from the strategy guide: mission titles on every score row, rank-versus-score warnings, hints for rank, Secret Order and battle order, dimmed objective boxes beyond the known goal counts, and two Top Ace presets (battles 1-10 and 1-7) that reproduce the original samples' objective masks.\n- [x] X-Wing rules from the offsets document and the strategy guide: soft rank-versus-score warnings with the guide's thresholds, medal-versus-tour-completion warnings, medal and proving ground hints, tour, operation and historical mission titles, "Flight Cadet" and "Flight Officer" rank names, and a read-only "level the recorded scores support" for the Kalidor Crescent with a Sync button. Health value 2 is now labelled "Killed".
 - [ ] Supply the TIE PDFs as text, if they turn up (the offsets document has been supplied, in part).
 - [ ] Optional workflow that runs `node tools/test.js` on each push.
 

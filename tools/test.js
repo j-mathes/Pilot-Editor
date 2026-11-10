@@ -155,6 +155,20 @@ test('TIE: mission names cover every score slot, rank warnings and Top Ace prese
   assert.strictEqual(mine7.get('pilot.secret'), ref7.get('pilot.secret'));
 });
 
+test('X-Wing guide names: ranks, tour operations, historical missions', () => {
+  const xw = PE.games.xwing;
+  const label = id => xw.fields.find(f => f.id === id).label;
+  assert.strictEqual(label('tour.0.op.2'), 'Tour 1 operation 3: Fly Point During Evacuation score');
+  assert.strictEqual(label('tour.2.op.13'), 'Tour 3 operation 14: Death Star Trench Run score');
+  assert.strictEqual(label('tour.3.op.0'), 'Tour 4 operation 1 score');
+  assert.strictEqual(label('hist.0.0.score'), "X-Wing mission 1 (Dev's Sidestep) score");
+  assert.strictEqual(label('hist.3.0.score'), 'B-Wing mission 1 score');
+  const r = load('ROOKIE.PLT');
+  assert.strictEqual(r.def.fields.find(f => f.id === 'pilot.rank').options[0].label, 'Flight Cadet');
+  r.set('pilot.score', 25000);
+  assert(r.warningsFor('pilot.rank').some(x => /rank of Flight Officer/.test(x.text)));
+});
+
 test('RUSTY.PLT (3410 bytes)', () => {
   const st = load('RUSTY.PLT');
   assert.strictEqual(st.get('tour.0.status'), 1);

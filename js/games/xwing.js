@@ -11,10 +11,10 @@
   const chk = (id, offset, label, extra) =>
     Object.assign({ id, type: 'u8', offset, label, kind: 'bool' }, extra);
 
-  const RANKS = ['Cadet', 'Officer', 'Lieutenant', 'Captain', 'Commander', 'General'];
+  const RANKS = ['Flight Cadet', 'Flight Officer', 'Lieutenant', 'Captain', 'Commander', 'General'];
   const HEALTH = ['Alive', 'Captured', 'Killed'];
   const TOUR_STATUS = ['Inactive', 'Active', 'Incomplete', 'Complete'];
-  const KALIDOR = ['None', 'Kalidor Crescent', 'Bronze Cluster', 'Silver Talons', 'Silver Scimitar', 'Gold Wings', 'Diamond Eyes'];
+  const KALIDOR = ['None', 'Kalidor Crescent', 'Bronze Cluster', 'Silver Talons', 'Silver Scimitar', 'Golden Wings', 'Diamond Eyes'];
   const SHIPS = ['X-Wing', 'Y-Wing', 'A-Wing', 'B-Wing'];
   const HISTORIC = ['X-Wing', 'Y-Wing', 'A-Wing', 'B-Wing', 'Bonus'];
   const NPC = ['X-Wing', 'Y-Wing', 'A-Wing', 'TIE Fighter', 'TIE Interceptor', 'TIE Bomber', 'Assault Gunboat',
@@ -32,14 +32,34 @@
     ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11A', '11B', '12', '13', '14A', '14B', '15', '16', '17A', '17B', '18', '19', '20A', '20B']
   ];
 
+  // Titles from the original X-Wing strategy guide; the guide covers the first three tours and the X, Y and A-wing missions only.
+  const TOUR_TITLES = ['A New Ally', 'The Great Search', 'The Gathering Storm'];
+  const TOUR_OP_TITLES = [
+    ['Destroy Imperial Convoy', 'Reconnaissance Mission', 'Fly Point During Evacuation', 'Protect Medical Frigate', 'Ambush Imperial Supply Convoy',
+      'Raid for R2 Units', 'Recover Stolen X-wings', 'Rescue Sullustan Tech Staff', 'Diplomatic Summit at Sullust', 'Rescue Sullustan Leader',
+      'Capture Staff from Cygnus', 'Recover Explosive Warhead'],
+    ['Rescue from Star\'s End', 'Rescue Wookiee Slaves', 'Attack Weapons Convoy', 'Capture Stolen Freighter', 'Protect Captured Satellites',
+      'Ambush in the Cron Drift', 'Protect a Disabled X-wing', 'Stop Hyperdrive Replacement', 'Take Out Intrepid\'s Escort', 'Destroy the Intrepid',
+      'Deliver Plans to Princess Leia', 'Protect Princess Leia'],
+    ['Guard Weapons Transfer', 'Destroy Repair Dock', 'Capture Military Transport', 'Scramble!', 'Intercept and Capture', 'Destroy Imperial Base',
+      'Destroy Priam\'s Escort', 'Capture the Frigate Priam', 'Capture Ethar I and II', 'Guard Vital Supply Depot', 'Defend the Independence',
+      'Begin Death Star Assault', 'Attack Death Star Surface', 'Death Star Trench Run']
+  ];
+  const opTitle = (t, i) => TOUR_OP_TITLES[t] ? ': ' + TOUR_OP_TITLES[t][i] : '';
+  const HIST_TITLES = [
+    ['Dev\'s Sidestep', 'Wingmen Are Important', 'Satellites Near Coruscant', 'Beat the Odds', 'Rescue at Mon Calamari', 'Farlander\'s First Mission'],
+    ['Commerce Raid', 'Y-wing Gunnery Practice', 'S.O.S. from Corvette Karinne', 'Prisoners from Kessel', 'Escape from Mytus VII', 'Interception and Capture'],
+    ['Repair Depot Raid', 'Aggressor Squadron Training', 'Intercept TIE Bomber Run', 'Attack Run on Freighters', 'Protect Returning Starfighters', 'Deep Space Reconnaissance']
+  ];
+
   const fields = [];
   fields.push(sel('pilot.health', 'u8', 2, 'Health', HEALTH));
-  fields.push(sel('pilot.rank', 'u8', 3, 'Rank', RANKS));
-  fields.push(num('pilot.score', 'i32', 4, 'Tour of Duty points', { min: 0, softMax: 999999, hint: 'Total Tour of Duty points.' }));
+  fields.push(sel('pilot.rank', 'u8', 3, 'Rank', RANKS, { hint: 'Score needed (strategy guide): Flight Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000.' }));
+  fields.push(num('pilot.score', 'i32', 4, 'Tour of Duty points', { min: 0, softMax: 999999, hint: 'Total Tour of Duty points, which decide the rank.' }));
   fields.push(num('pilot.experience', 'u16', 8, 'Rookie number (experience)', {
     hint: 'Rookie number. It sets the pilot\'s standing: Novice, Officer, Veteran, Ace or Top Ace (the cut-off values are not documented).'
   }));
-  fields.push(sel('tour.current', 'u8', 640, 'Current tour', ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4', 'Tour 5'], { hint: 'The tour the pilot is on now (stored 0-based in the file).' }));
+  fields.push(sel('tour.current', 'u8', 640, 'Current tour', ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4', 'Tour 5'].map((n, i) => TOUR_TITLES[i] ? n + ': ' + TOUR_TITLES[i] : n), { hint: 'The tour the pilot is on now (stored 0-based in the file).' }));
   // Samples show the game keeps this count at both 642 and 647.
   fields.push(num('tour.currentOps', 'u8', 647, 'Operations completed (current tour)', { mirrors: [642], softMax: 20, hint: 'Operations completed in the current tour. The game keeps this value in two places (bytes 642 and 647); both are updated.' }));
 
@@ -48,7 +68,7 @@
     fields.push(chk('medal.' + k, 10 + i, names[i], { hint: 'Awarded for completing Tour ' + (i + 1) + '.' }));
   });
   fields.push(sel('medal.kalidor', 'u8', 17, 'Kalidor Crescent', KALIDOR, {
-    hint: 'Each level needs a score in a different Tour of Duty mission: Kalidor Crescent 10,000, Bronze Cluster 12,000, Silver Talons 14,000, Silver Scimitar 16,000, Golden Wings 18,000, Diamond Eyes 20,000.'
+    hint: 'Awarded for a score in a single Tour of Duty mission. In this file each level is checked against a different mission: Kalidor Crescent 10,000, Bronze Cluster 12,000, Silver Talons 14,000, Silver Scimitar 16,000, Golden Wings 18,000, Diamond Eyes 20,000.'
   }));
 
   SHIPS.forEach((name, i) => {
@@ -60,8 +80,10 @@
   const HIST_SCORES = [160, 224, 288, 352, 416];
   HISTORIC.forEach((name, g) => {
     for (let m = 0; m < 6; m++) {
-      fields.push(chk('hist.' + g + '.' + m + '.done', HIST_FLAGS[g] + m, name + ' mission ' + (m + 1) + ' complete'));
-      fields.push(num('hist.' + g + '.' + m + '.score', 'u32', HIST_SCORES[g] + 4 * m, name + ' mission ' + (m + 1) + ' score', { softMax: 999999 }));
+      const title = HIST_TITLES[g] ? HIST_TITLES[g][m] : null;
+      const hint = (title ? 'Mission ' + (m + 1) + ': ' + title + '. ' : '') + 'Completing a historical mission earns a battle patch.';
+      fields.push(chk('hist.' + g + '.' + m + '.done', HIST_FLAGS[g] + m, name + ' mission ' + (m + 1) + (title ? ' (' + title + ')' : '') + ' complete', { hint }));
+      fields.push(num('hist.' + g + '.' + m + '.score', 'u32', HIST_SCORES[g] + 4 * m, name + ' mission ' + (m + 1) + (title ? ' (' + title + ')' : '') + ' score', { softMax: 999999, hint: title ? 'Mission ' + (m + 1) + ': ' + title + '.' : undefined }));
     }
   });
 
@@ -72,7 +94,7 @@
     fields.push(num('tour.' + t + '.ops', 'u8', 751 + t, 'Tour ' + (t + 1) + ' operations completed', { max: slots, softMax: TOUR_OPS[t], hint: 'Operations completed in this tour. The last-operation marker in the file is kept in step automatically.' }));
     for (let i = 0; i < slots; i++) {
       fields.push(num('tour.' + t + '.op.' + i, 'u32', TOUR_SCORE_BASE[t] + 4 * i,
-        'Tour ' + (t + 1) + ' operation ' + TOUR_OP_LABELS[t][i] + ' score', { softMax: 999999 }));
+        'Tour ' + (t + 1) + ' operation ' + TOUR_OP_LABELS[t][i] + opTitle(t, i) + ' score', { softMax: 999999 }));
     }
   });
 
@@ -139,7 +161,7 @@
 
   const tourCards = TOUR_SLOTS.map((slots, t) => ({
     id: 'tour' + t,
-    title: 'Tour ' + (t + 1),
+    title: 'Tour ' + (t + 1) + (TOUR_TITLES[t] ? ': ' + TOUR_TITLES[t] : ''),
     badge: g => ({ text: TOUR_STATUS[g('tour.' + t + '.status')] || 'Unknown', tone: ['idle', 'active', 'warn', 'done'][g('tour.' + t + '.status')] || 'warn' }),
     progress: g => ({ value: g('tour.' + t + '.ops'), total: TOUR_OPS[t] }),
     total: derived['tour.' + t + '.total'].compute,
@@ -147,7 +169,7 @@
       { type: 'form', items: [{ id: 'tour.' + t + '.status', label: 'Status' }, { id: 'tour.' + t + '.ops', label: 'Operations completed' }, { derived: 'tour.' + t + '.total' }] },
       {
         type: 'table', title: 'Operation scores', columns: ['Score'],
-        rows: TOUR_OP_LABELS[t].map((label, i) => ({ label: 'Operation ' + label, cells: ['tour.' + t + '.op.' + i] })),
+        rows: TOUR_OP_LABELS[t].map((label, i) => ({ label: 'Operation ' + label + opTitle(t, i), cells: ['tour.' + t + '.op.' + i] })),
         actions: [{
           label: 'Mark all operations complete', title: 'Set this tour to Complete with every operation done (scores are not changed)',
           run: api => {
@@ -234,8 +256,8 @@
     }
   }
 
-  // TOD points that normally earn each rank from Captain up (Lieutenant can also come from training missions).
-  const RANK_POINTS = [0, 0, 50000, 100000, 250000, 500000];
+  // Accumulated TOD points for each rank (strategy guide). Lieutenant can also come from training missions.
+  const RANK_POINTS = [0, 20000, 50000, 100000, 250000, 500000];
   const MEDAL_KEYS = ['corellian', 'mantooine', 'alderaan', 'yavin', 'hoth'];
 
   function warnings(get) {
@@ -246,7 +268,7 @@
       out.push({ id: 'pilot.rank', level: 'info', text: RANKS[rank] + ' normally needs ' + RANK_POINTS[rank].toLocaleString('en-US') + ' Tour of Duty points; this pilot has ' + score.toLocaleString('en-US') + '.' });
     }
     for (let r = RANK_POINTS.length - 1; r > rank; r--) {
-      if (r >= 2 && score >= RANK_POINTS[r]) {
+      if (r >= 1 && score >= RANK_POINTS[r]) {
         out.push({ id: 'pilot.rank', level: 'info', text: score.toLocaleString('en-US') + ' Tour of Duty points normally earn the rank of ' + RANKS[r] + '.' });
         break;
       }
