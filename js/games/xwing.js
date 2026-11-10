@@ -32,8 +32,8 @@
     ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11A', '11B', '12', '13', '14A', '14B', '15', '16', '17A', '17B', '18', '19', '20A', '20B']
   ];
 
-  // Titles from the original X-Wing strategy guide; the guide covers the first three tours and the X, Y and A-wing missions only.
-  const TOUR_TITLES = ['A New Ally', 'The Great Search', 'The Gathering Storm'];
+  // Titles from the X-Wing strategy guides (original and Collector's CD-ROM editions); each slot of tours 4 and 5 follows the file order.
+  const TOUR_TITLES = ['A New Ally', 'The Great Search', 'The Gathering Storm', 'Imperial Pursuit', 'B-wing'];
   const TOUR_OP_TITLES = [
     ['Destroy Imperial Convoy', 'Reconnaissance Mission', 'Fly Point During Evacuation', 'Protect Medical Frigate', 'Ambush Imperial Supply Convoy',
       'Raid for R2 Units', 'Recover Stolen X-wings', 'Rescue Sullustan Tech Staff', 'Diplomatic Summit at Sullust', 'Rescue Sullustan Leader',
@@ -43,13 +43,24 @@
       'Deliver Plans to Princess Leia', 'Protect Princess Leia'],
     ['Guard Weapons Transfer', 'Destroy Repair Dock', 'Capture Military Transport', 'Scramble!', 'Intercept and Capture', 'Destroy Imperial Base',
       'Destroy Priam\'s Escort', 'Capture the Frigate Priam', 'Capture Ethar I and II', 'Guard Vital Supply Depot', 'Defend the Independence',
-      'Begin Death Star Assault', 'Attack Death Star Surface', 'Death Star Trench Run']
+      'Begin Death Star Assault', 'Attack Death Star Surface', 'Death Star Trench Run'],
+    ['Evacuate Yavin', 'Provide Area Protection', 'Evacuate Cruiser Maximus', 'Protect Frigate Anvil', 'Abandon Ship', 'Guard Repair Operations',
+      'Protect Supply Container', 'Hide and Seek', 'Clear Minefield', 'Destroy Comm Area', 'Guard Cargo Transfer', 'Grain Snatch',
+      'Capture Ghorin\'s Y-wings', 'Raid Storage Area', 'Corvette Alley', 'Grain Exchange', 'Confirm Grain Delivery', 'Steal TIE Advanced',
+      'Escort Base Convoy', 'Support Allies', 'Attack Frigate Red Wind', 'Capture Imperial Gunboats', 'Capture Imperial Corvette', 'Defend Ram\'s Head'],
+    ['Protect B-wing Assembly Area', 'Cover B-wing Evacuation', 'Protect B-wing Delivery', 'Destroy TIE Staging Area', 'Destroy Secret Weapons Base',
+      'Prisoner Rescue', 'Help Neutrals Out of Ambush', 'Escort VIP to Alliance Cruiser', 'Guard Cargo Pickup', 'Probe Capture',
+      'Destroy Corvette Base', 'Destroy Imperial Base', 'Intercept Imperial Attack', 'Protect B-wing Delivery', 'Capture Imperial Frigate',
+      'Capture Imperial Officers', 'Escort B-wings on Attack', 'Attack Probe Calibration Site', 'Ambush Imperial Arms Shipment',
+      'Disrupt Delivery of New TIEs', 'Destroy the Relentless', 'Operation Blunt Stick', 'Save the Cruiser Cathleen', 'Escape to Hoth!']
   ];
   const opTitle = (t, i) => TOUR_OP_TITLES[t] ? ': ' + TOUR_OP_TITLES[t][i] : '';
   const HIST_TITLES = [
     ['Dev\'s Sidestep', 'Wingmen Are Important', 'Satellites Near Coruscant', 'Beat the Odds', 'Rescue at Mon Calamari', 'Farlander\'s First Mission'],
     ['Commerce Raid', 'Y-wing Gunnery Practice', 'S.O.S. from Corvette Karinne', 'Prisoners from Kessel', 'Escape from Mytus VII', 'Interception and Capture'],
-    ['Repair Depot Raid', 'Aggressor Squadron Training', 'Intercept TIE Bomber Run', 'Attack Run on Freighters', 'Protect Returning Starfighters', 'Deep Space Reconnaissance']
+    ['Repair Depot Raid', 'Aggressor Squadron Training', 'Intercept TIE Bomber Run', 'Attack Run on Freighters', 'Protect Returning Starfighters', 'Deep Space Reconnaissance'],
+    ['Project Shantipole', 'Assault on Imperial Convoy', 'Capture the Frigate Priam', 'B-wing Attack on the Shrike', 'Attack Death Star Surface', 'Death Star Trench Run'],
+    ['Protect Cargo Transfer', 'Destroy Troop Convoy', 'Attack Star Destroyer', 'Protect Convoy', 'Attack Imperial Stockyard', 'Protect Your Mothership']
   ];
 
   const fields = [];

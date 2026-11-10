@@ -50,7 +50,11 @@ Legacy C# sources, offset docs and sample pilot files are in `reference/X-Wing/`
   - Rank names: Flight Cadet, Flight Officer, Lieutenant, Captain, Commander, General. Accumulated scores: Flight Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000.
   - Kalidor Crescent: awarded for a score in a single mission; main medal 10,000, then Bronze Cluster 12,000, Silver Talons 14,000, Silver Scimitar 16,000, Golden Wings 18,000, Diamond Eyes 20,000. Whether each level needs a different mission is only stated in the offsets document, which the editor follows.
   - Medals for completing tours: Corellian Cross (first), Mantooine Medallion (second), Star of Alderaan (third). One Flight Badge per craft for finishing the proving ground; one battle patch per historical mission.
-  - Titles for the three tours, their 38 operations, and the 18 X, Y and A-wing historical missions, now used as labels. Tours 4 and 5 and the B-Wing and Bonus missions have no titles.
+  - Titles for the three tours, their 38 operations, and the 18 X, Y and A-wing historical missions, now used as labels.
+- **X-Wing Collector's CD-ROM: The Official Strategy Guide (1995)** (text extracted outside the repository; the PDF is in `.gitignore`). It adds the expansions to the original guide:
+  - Tour 4 "Imperial Pursuit" and Tour 5 "B-wing", each with 20 numbered operations and 24 slots. The choice operations are 6, 8, 12 and 16 in Tour 4 and 11, 14, 17 and 20 in Tour 5, with `a` and `b` versions. The editor's slot order (1-5, 6a, 6b, 7, and so on) comes from the legacy editor; the guide does not say how the file stores the choice operations. All 48 titles are used as labels in that order.
+  - Six B-Wing historical missions and six Bonus missions, now used as labels, plus the B-wing as a fourth proving ground craft with its own flight badge and battle patch.
+  - Tour ribbons for Tours 4 and 5 and the Talons of Hoth and Shield of Yavin medals sit together in the medals case, which fits the offsets document pairing them with Tours 5 and 4. Rank and Kalidor Crescent scores are the same as in the original guide.
 - **Not readable by tooling (may be supplied later as text or CSV):** `xw95plt.mdl`, `GAMEDAT.UGE`, and the zip, rar and chm archives.
 
 ## Architecture
@@ -171,6 +175,7 @@ Status: version 1.1.0 is published at https://github.com/j-mathes/Pilot-Editor a
 ### Still open
 
 - [ ] Check the 1706-byte X-Wing layout (+1 shift from byte 735) and the 642/647 current-tour bytes in the game.
+- [ ] Settle how Tours 4 and 5 store the a/b operations. `TOPACE.PLT` has 15 consecutive Tour 4 scores, which fits one slot per operation number (operations 1 to 15) with the b versions in the last four slots better than the interleaved order now used. Needs a pilot saved after flying a b operation. An AI chat answer supplied offsets (0x4D, 0x194 and so on) that contradict the verified layout, so none of it was applied; its general points (fly one of each pair, operations completed tops out at 20) fit the guide.
 - [ ] Confirm the values of a new blank pilot against a pilot created in each game.
 - [ ] Optional action to set a tour's status and operations count from its scored operations (see `TOPACE.PLT` Tour 4), and one to fill scores for completed items.
 - [ ] A "Rookie" preset built from `ROOKIE.PLT`.

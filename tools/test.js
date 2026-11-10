@@ -160,9 +160,12 @@ test('X-Wing guide names: ranks, tour operations, historical missions', () => {
   const label = id => xw.fields.find(f => f.id === id).label;
   assert.strictEqual(label('tour.0.op.2'), 'Tour 1 operation 3: Fly Point During Evacuation score');
   assert.strictEqual(label('tour.2.op.13'), 'Tour 3 operation 14: Death Star Trench Run score');
-  assert.strictEqual(label('tour.3.op.0'), 'Tour 4 operation 1 score');
+  assert.strictEqual(label('tour.3.op.0'), 'Tour 4 operation 1: Evacuate Yavin score');
+  assert.strictEqual(label('tour.3.op.14'), 'Tour 4 operation 12B: Corvette Alley score');
+  assert.strictEqual(label('tour.4.op.23'), 'Tour 5 operation 20B: Escape to Hoth! score');
   assert.strictEqual(label('hist.0.0.score'), "X-Wing mission 1 (Dev's Sidestep) score");
-  assert.strictEqual(label('hist.3.0.score'), 'B-Wing mission 1 score');
+  assert.strictEqual(label('hist.3.0.score'), 'B-Wing mission 1 (Project Shantipole) score');
+  assert.strictEqual(label('hist.4.5.score'), 'Bonus mission 6 (Protect Your Mothership) score');
   const r = load('ROOKIE.PLT');
   assert.strictEqual(r.def.fields.find(f => f.id === 'pilot.rank').options[0].label, 'Flight Cadet');
   r.set('pilot.score', 25000);
