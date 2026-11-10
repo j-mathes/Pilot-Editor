@@ -63,6 +63,23 @@
     ['Protect Cargo Transfer', 'Destroy Troop Convoy', 'Attack Star Destroyer', 'Protect Convoy', 'Attack Imperial Stockyard', 'Protect Your Mothership']
   ];
 
+  // Slots of each operation number; the a and b versions of a choice share a number. Real saves (NOKSP.PLT) score one slot of each pair.
+  const OP_SLOTS = TOUR_OP_LABELS.map(labels => {
+    const groups = [];
+    labels.forEach((label, slot) => {
+      const n = parseInt(label, 10);
+      (groups[n - 1] = groups[n - 1] || []).push(slot);
+    });
+    return groups;
+  });
+  // The file's last-operation marker is a slot position, so with n operations done it points at the slot flown for operation n.
+  function lastSlot(t, n, get) {
+    if (n <= 0) return 255;
+    const slots = OP_SLOTS[t][Math.min(n, OP_SLOTS[t].length) - 1];
+    const played = slots.filter(s => get('tour.' + t + '.op.' + s) > 0);
+    return played.length ? played[0] : slots[0];
+  }
+
   const fields = [];
   fields.push(sel('pilot.health', 'u8', 2, 'Health', HEALTH));
   fields.push(sel('pilot.rank', 'u8', 3, 'Rank', RANKS, { hint: 'Score needed (strategy guide): Flight Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000.' }));
@@ -100,9 +117,14 @@
 
   TOUR_SLOTS.forEach((slots, t) => {
     fields.push(sel('tour.' + t + '.status', 'u8', 735 + t, 'Tour ' + (t + 1) + ' status', TOUR_STATUS, { hint: 'Only one tour should be Active. Activating a tour also makes it the current tour.' }));
-    // The game stores the last completed operation index here (0xFF = none).
-    fields.push(num('tour.' + t + '.last', 'u8', 743 + t, 'Tour ' + (t + 1) + ' last operation index', { hidden: true }));
-    fields.push(num('tour.' + t + '.ops', 'u8', 751 + t, 'Tour ' + (t + 1) + ' operations completed', { max: slots, softMax: TOUR_OPS[t], hint: 'Operations completed in this tour. The last-operation marker in the file is kept in step automatically.' }));
+    // The game stores the slot position of the last completed operation here (0xFF = none); it is not the operation count for tours 4 and 5.
+    fields.push(num('tour.' + t + '.last', 'u8', 743 + t, 'Tour ' + (t + 1) + ' last completed slot', {
+      hint: 'Position (0-based) of the last completed operation in the file\'s slot order, 255 if none. The game uses it with Operations completed to pick the next mission.'
+    }));
+    fields.push(num('tour.' + t + '.ops', 'u8', 751 + t, 'Tour ' + (t + 1) + ' operations completed', {
+      max: slots, softMax: TOUR_OPS[t],
+      hint: 'Operations completed, counting each a/b pair once (a finished Tour 4 or 5 has 20). Changing it also sets the last completed slot.'
+    }));
     for (let i = 0; i < slots; i++) {
       fields.push(num('tour.' + t + '.op.' + i, 'u32', TOUR_SCORE_BASE[t] + 4 * i,
         'Tour ' + (t + 1) + ' operation ' + TOUR_OP_LABELS[t][i] + opTitle(t, i) + ' score', { softMax: 999999 }));
@@ -177,7 +199,7 @@
     progress: g => ({ value: g('tour.' + t + '.ops'), total: TOUR_OPS[t] }),
     total: derived['tour.' + t + '.total'].compute,
     blocks: [
-      { type: 'form', items: [{ id: 'tour.' + t + '.status', label: 'Status' }, { id: 'tour.' + t + '.ops', label: 'Operations completed' }, { derived: 'tour.' + t + '.total' }] },
+      { type: 'form', items: [{ id: 'tour.' + t + '.status', label: 'Status' }, { id: 'tour.' + t + '.ops', label: 'Operations completed' }, { id: 'tour.' + t + '.last', label: 'Last completed slot (255 = none)' }, { derived: 'tour.' + t + '.total' }] },
       {
         type: 'table', title: 'Operation scores', columns: ['Score'],
         rows: TOUR_OP_LABELS[t].map((label, i) => ({ label: 'Operation ' + label + opTitle(t, i), cells: ['tour.' + t + '.op.' + i] })),
@@ -262,7 +284,7 @@
     m = /^tour\.(\d)\.ops$/.exec(id);
     if (m) {
       const t = Number(m[1]);
-      api.set('tour.' + t + '.last', value > 0 ? value - 1 : 255);
+      api.set('tour.' + t + '.last', lastSlot(t, value, api.get));
       if (api.get('tour.' + t + '.status') === 1 || api.get('tour.current') === t) api.set('tour.currentOps', value);
     }
   }
@@ -291,6 +313,17 @@
       if (complete && !medal) out.push({ id: 'medal.' + key, level: 'info', text: 'Tour ' + (t + 1) + ' is Complete but its medal is not set.' });
     });
     const active = [];
+    TOUR_SLOTS.forEach((_, t) => {
+      const ops = get('tour.' + t + '.ops');
+      const last = get('tour.' + t + '.last');
+      if (ops >= 1 && ops <= OP_SLOTS[t].length && OP_SLOTS[t][ops - 1].indexOf(last) < 0) {
+        out.push({
+          id: 'tour.' + t + '.last', level: 'info',
+          text: 'Tour ' + (t + 1) + ' has ' + ops + ' operations completed, but its last completed slot (' + (last === 255 ? 'none' : last) +
+            ') does not point at operation ' + ops + '. The game may load the wrong next mission; setting Operations completed again fixes it.'
+        });
+      }
+    });
     TOUR_SLOTS.forEach((_, t) => { if (get('tour.' + t + '.status') === 1) active.push(t + 1); });
     if (active.length > 1) out.push({ level: 'warn', text: 'Tours ' + active.join(', ') + ' are all Active; only one should be.' });
     TOUR_SLOTS.forEach((_, t) => {

@@ -172,6 +172,29 @@ test('X-Wing guide names: ranks, tour operations, historical missions', () => {
   assert(r.warningsFor('pilot.rank').some(x => /rank of Flight Officer/.test(x.text)));
 });
 
+test('NOKSP.PLT: a real save with Tours 4 and 5 played', () => {
+  const st = load('NOKSP.PLT');
+  assert.strictEqual(st.get('tour.3.status'), 3);
+  assert.strictEqual(st.get('tour.3.ops'), 20);
+  assert.strictEqual(st.get('tour.3.last'), 23);
+  assert.strictEqual(st.warningsFor('tour.3.last').length, 0);
+  // Exactly one version of each Tour 4 choice pair (slots 5/6, 8/9, 13/14, 18/19) holds a score.
+  for (const [a, b] of [[5, 6], [8, 9], [13, 14], [18, 19]]) {
+    assert.strictEqual((st.get('tour.3.op.' + a) > 0) + (st.get('tour.3.op.' + b) > 0), 1, 'pair ' + a + '/' + b);
+  }
+  assert(st.warningsFor('tour.4.ops').some(w => /above the usual limit of 20/.test(w.text)));
+  // Operations are counted once per pair, and the marker follows the version that was flown.
+  st.set('tour.3.ops', 6);
+  assert.strictEqual(st.get('tour.3.last'), 5);
+  st.set('tour.3.ops', 8);
+  assert.strictEqual(st.get('tour.3.last'), 9);
+  st.set('tour.3.ops', 15);
+  assert.strictEqual(st.get('tour.3.last'), 17);
+  st.set('tour.3.ops', 0);
+  assert.strictEqual(st.get('tour.3.last'), 255);
+  assert(load('RUSTY1.PLT').warningsFor('tour.4.last').length === 1);
+});
+
 test('RUSTY.PLT (3410 bytes)', () => {
   const st = load('RUSTY.PLT');
   assert.strictEqual(st.get('tour.0.status'), 1);
