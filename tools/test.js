@@ -220,6 +220,25 @@ test('TIE: finishing training levels 3 and 4 changes the next level, the complet
   assert.deepStrictEqual(Array.from(changed).sort(), ['training.0.done=4', 'training.0.next=2', 'training.0.score=5650']);
 });
 
+test('TIE: the 1998 version creates the same new pilot as 1994', () => {
+  const luke = samples.find(s => s.name === 'LUKE-1.tfr').bytes;
+  const blank = PE.games.tie.blank();
+  assert.strictEqual(Buffer.compare(Buffer.from(luke.subarray(1928)), Buffer.from(blank.subarray(1928))), 0, 'backup half is the pilot as created');
+  const diffs = [];
+  for (let i = 0; i < 1928; i++) if (luke[i] !== blank[i]) diffs.push(i);
+  assert.deepStrictEqual(Array.from(diffs), [29], 'only the first craft next-level byte was touched');
+});
+
+test('TIE: LUKE-2 training (started at level 3, finished level 7, score 29530)', () => {
+  const a = samples.find(s => s.name === 'LUKE-1.tfr').bytes, b = samples.find(s => s.name === 'LUKE-2.tfr').bytes;
+  const diffs = [];
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) diffs.push(i);
+  assert.deepStrictEqual(Array.from(diffs), [42, 43, 90]);
+  assert.strictEqual(b[90], 7);
+  assert.strictEqual(b[29], 2);
+  assert.strictEqual(b[42] | (b[43] << 8), 29530);
+});
+
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
   const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE)/i.test(s.name) && s.name !== 'CALE.PLT');
   assert(roster.length >= 30, 'roster files missing: ' + roster.length);

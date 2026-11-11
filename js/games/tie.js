@@ -86,10 +86,13 @@
       softMax: 21,
       hint: 'The level chosen at the start of the last training run, counting from 0, so 2 means level 3. A new pilot has 0. It stayed 0 after level 1 was finished and level 2 begun (RUSTY-2) and became 2 after starting at level 3 (RUSTY-3).'
     }));
-    fields.push(num('training.' + i + '.score', 'u32', 42 + 4 * i, name + ' training score', { max: MAX_SCORE }));
+    fields.push(num('training.' + i + '.score', 'u32', 42 + 4 * i, name + ' training score', {
+      max: MAX_SCORE,
+      hint: 'Highest score of any training run with this craft (confirmed by the owner). The game keeps each run in TRAIN.HGH, not in the pilot file.'
+    }));
     fields.push(num('training.' + i + '.done', 'u8', 90 + i, name + ' highest training level completed', {
       softMax: 20,
-      hint: 'Highest training level completed. A new pilot has 2, so levels 1 to 3 can be chosen; finishing level 4 gives the training badge and sets 4. The course repeats with harder levels, and 6 has been seen. Inferred from three pilots made in the game.',
+      hint: 'Highest training level completed. A new pilot has 2, so levels 1 to 3 can be chosen; finishing level 4 gives the training badge and sets 4. The course repeats with harder levels, and 6 and 7 have been seen (7 in LUKE-2). The game never lowers it when a lower level is replayed.',
       valueLabels: TRAINING_DONE_LABELS
     }));
   });
