@@ -77,13 +77,20 @@
   fields.push(num('pilot.skill', 'u16', 8, 'Skill level', { hint: 'Skill level of the pilot (0 = novice, 65535 = super ace).' }));
   fields.push(sel('pilot.secret', 'u8', 10, 'Secret Order rank', SECRET, { hint: 'Rank in the Emperor\'s Secret Order. In the original game 0 = None up to 6 = Emperor\'s Hand, the six levels of the strategy guide, earned only through secondary goals: 20,000 points and 2 missions with secondary goals, then 50,000/4, 100,000/6, 250,000/9, 400,000/12 and 800,000/15. Values 7 to 9 come from the offsets list and the Top Ace pilots; no document describes them.' }));
 
+  // Levels counted as the simulator shows them; inferred from three pilots made in the game (RUSTY-1, -2 and -3).
+  const TRAINING_DONE_LABELS = { 2: 'New pilot (levels 1 and 2 count as done)', 4: 'Level 4 done: training badge' };
+  for (let n = 3; n <= 12; n++) if (!TRAINING_DONE_LABELS[n]) TRAINING_DONE_LABELS[n] = 'Level ' + n + ' done';
+
   SHIPS.forEach((name, i) => {
-    fields.push(num('training.' + i + '.next', 'u8', 29 + i, name + ' next training level', { softMax: 21, hint: 'The next training level offered for this craft.' }));
+    fields.push(num('training.' + i + '.next', 'u8', 29 + i, name + ' next training level', {
+      softMax: 21,
+      hint: 'The level chosen at the start of the last training run, counting from 0, so 2 means level 3. A new pilot has 0. It stayed 0 after level 1 was finished and level 2 begun (RUSTY-2) and became 2 after starting at level 3 (RUSTY-3).'
+    }));
     fields.push(num('training.' + i + '.score', 'u32', 42 + 4 * i, name + ' training score', { max: MAX_SCORE }));
-    fields.push(num('training.' + i + '.done', 'u8', 90 + i, name + ' total training levels completed', {
+    fields.push(num('training.' + i + '.done', 'u8', 90 + i, name + ' highest training level completed', {
       softMax: 20,
-      hint: 'The 1995 magazine table calls this "Total Training Levels Completed", but game files hold 0, 2, 4 and 6, so it is not a plain count. The labels 2 = not completed and 4 = certificate come from the owner\'s own notes and are unverified; 6 is seen with no known meaning.',
-      valueLabels: { 2: 'Not completed (unverified)', 4: 'Certificate (unverified)' }
+      hint: 'Highest training level completed. A new pilot has 2, so levels 1 to 3 can be chosen; finishing level 4 gives the training badge and sets 4. The course repeats with harder levels, and 6 has been seen. Inferred from three pilots made in the game.',
+      valueLabels: TRAINING_DONE_LABELS
     }));
   });
 
@@ -183,7 +190,7 @@
     {
       id: 'training', title: 'Training',
       blocks: [{
-        type: 'table', title: 'Training simulator', columns: ['Next level', 'Best score', 'Total levels completed'],
+        type: 'table', title: 'Training simulator', columns: ['Next level (from 0)', 'Best score', 'Highest level completed'],
         rows: SHIPS.map((name, i) => ({ label: name, cells: ['training.' + i + '.next', 'training.' + i + '.score', 'training.' + i + '.done'] }))
       }]
     },
@@ -252,11 +259,12 @@
     return out;
   }
 
+  // Identical to a pilot created in the game (RUSTY-1.TFR): difficulty Medium and twelve training bytes at 2.
   function blank() {
     const b = new Uint8Array(3856);
     for (const base of [0, 1928]) {
-      b.fill(2, base + 90, base + 97);
-      b[base + 617] = 1;
+      b[base + 3] = 1;
+      b.fill(2, base + 90, base + 102);
     }
     return b;
   }

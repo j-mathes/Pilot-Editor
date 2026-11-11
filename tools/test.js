@@ -17,10 +17,10 @@ function test(name, fn) {
 }
 
 const samples = [];
+const walk = (dir, re) => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(e =>
+  e.isDirectory() ? walk(path.join(dir, e.name), re) : (re.test(e.name) ? [{ name: e.name, file: path.join(root, dir, e.name) }] : []));
 for (const [dir, re] of [['reference/X-Wing', /\.(plt|bak)$/i], ['reference/TIE-Fighter', /\.tfr$/i]]) {
-  for (const f of fs.readdirSync(path.join(root, dir)).filter(n => re.test(n))) {
-    samples.push({ name: f, bytes: new Uint8Array(fs.readFileSync(path.join(root, dir, f))) });
-  }
+  for (const s of walk(dir, re)) samples.push({ name: s.name, bytes: new Uint8Array(fs.readFileSync(s.file)) });
 }
 
 // ---- Table sanity ----
@@ -199,6 +199,40 @@ test('X-Wing: a new pilot has no training levels completed', () => {
   const st = PE.createState(PE.games.xwing, 'NEW', PE.games.xwing.blank());
   for (let i = 0; i < 4; i++) assert.strictEqual(st.get('training.' + i + '.level'), 0);
   assert(!st.isDirty());
+});
+
+test('TIE: the blank pilot equals a pilot created in the game, and one training run changes only the score', () => {
+  const tie = PE.games.tie;
+  const fresh = load('RUSTY-1.TFR');
+  const blank = PE.createState(tie, 'NEW', tie.blank());
+  for (const f of tie.fields) assert.strictEqual(blank.get(f.id), fresh.get(f.id), f.id);
+  const trained = load('RUSTY-2.TFR');
+  const changed = tie.fields.filter(f => trained.get(f.id) !== fresh.get(f.id)).map(f => f.id);
+  assert.deepStrictEqual(Array.from(changed), ['training.0.score']);
+  assert.strictEqual(trained.get('training.0.score'), 2430);
+});
+
+test('TIE: finishing training levels 3 and 4 changes the next level, the completed level and the score', () => {
+  const tie = PE.games.tie;
+  const fresh = load('RUSTY-1.TFR');
+  const done = load('RUSTY-3.TFR');
+  const changed = tie.fields.filter(f => done.get(f.id) !== fresh.get(f.id)).map(f => f.id + '=' + done.get(f.id));
+  assert.deepStrictEqual(Array.from(changed).sort(), ['training.0.done=4', 'training.0.next=2', 'training.0.score=5650']);
+});
+
+test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
+  const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE)/i.test(s.name) && s.name !== 'CALE.PLT');
+  assert(roster.length >= 30, 'roster files missing: ' + roster.length);
+  for (const s of roster) {
+    const st = PE.createState(PE.games.xwing, s.name, s.bytes);
+    for (let t = 0; t < 5; t++) {
+      assert.strictEqual(st.get('tour.' + t + '.ops'), 0, s.name + ' tour ' + t);
+      assert.strictEqual(st.get('tour.' + t + '.last'), 255, s.name + ' tour ' + t);
+    }
+    assert([0, 1].includes(st.get('tour.0.status')), s.name);
+    assert.deepStrictEqual([0, 1, 2, 3].map(i => st.get('training.' + i + '.level')), [8, 8, 8, 0], s.name);
+    assert.strictEqual(st.get('pilot.health'), 0, s.name);
+  }
 });
 
 test('RUSTY.PLT (3410 bytes)', () => {

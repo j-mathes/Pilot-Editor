@@ -85,7 +85,7 @@
   fields.push(sel('pilot.rank', 'u8', 3, 'Rank', RANKS, { hint: 'Score needed (strategy guide): Flight Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000.' }));
   fields.push(num('pilot.score', 'i32', 4, 'Tour of Duty points', { min: 0, softMax: 999999, hint: 'Total Tour of Duty points, which decide the rank.' }));
   fields.push(num('pilot.experience', 'u16', 8, 'Rookie number (experience)', {
-    hint: 'Rookie number. It sets the pilot\'s standing: Novice, Officer, Veteran, Ace or Top Ace (the cut-off values are not documented).'
+    hint: 'Rookie number. It sets the pilot\'s standing: Novice, Officer, Veteran, Ace or Top Ace. The original game\'s premade pilots use 16500, 33000, 49500 and 65535, which probably mark the steps; the exact cut-offs are not documented.'
   }));
   fields.push(sel('tour.current', 'u8', 640, 'Current tour', ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4', 'Tour 5'].map((n, i) => TOUR_TITLES[i] ? n + ': ' + TOUR_TITLES[i] : n), { hint: 'The tour the pilot is on now (stored 0-based in the file).' }));
   // Samples show the game keeps this count at both 642 and 647.
@@ -388,7 +388,7 @@
       1705: {},
       1706: {
         shift: 1, shiftFrom: 735,
-        note: 'This 1706-byte layout is inferred from sample files: everything from byte 735 onward is shifted by one. Check results in the game.'
+        note: 'This is the 1706-byte layout of the original X-Wing (it matches 35 original pilot files): from byte 735 on everything sits one byte later than in the 1705-byte Collector\'s CD layout.'
       },
       3410: { half: 1705 }
     },
