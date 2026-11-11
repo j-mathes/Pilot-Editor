@@ -83,6 +83,7 @@ All scripts share one global `PilotEditor` namespace and load in a fixed order: 
 | `js/ui/widgets.js` | Number field, enum select, mission grid, bitmask checklist, list |
 | `js/ui/sections.js` | Renderers for the section types: fields, matrix, list, cards |
 | `js/ui/shell.js` | Header, sidebar, error banner, changes drawer, shortcuts |
+| `js/ui/help.js` | Help dialog: computes the unmapped byte ranges for each game |
 | `js/games/xwing.js`, `js/games/tie.js` | One definition per game; each registers itself with `PilotEditor.games` |
 | `js/app.js` | Wires everything together; loaded last |
 
@@ -124,7 +125,7 @@ Also carried over:
   - Bulk actions: complete all, clear all, max all, reset section (each undoable).
   - Per-game presets ("Rookie", "Top Ace"), based on the sample files.
   - Derived values shown beside the editable ones (battle totals, space totals, TIE total kills versus the per-type sum) with a "Sync totals" button; tour or battle status can optionally be set from the operations count. Never silent.
-- **Shortcuts:** Ctrl+O, Ctrl+S, Ctrl+Z, Ctrl+Y.
+- **Shortcuts:** Ctrl+O, Ctrl+S, Ctrl+Z, Ctrl+Y, F1 (help).
 - **Game identity** (so it is always clear which game's pilot is open):
   - **Start screen:** with no file loaded there is no game theme. Two cards, "X-Wing (.plt)" and "TIE Fighter (.tfr)", each have Open and New buttons; dropping a file anywhere detects the game.
   - **Theme:** the app sets `data-game="xwing"` or `data-game="tie"` on `<body>`. `styles.css` swaps CSS variables under that attribute only, so no layout code branches on the game. Rebel accent (orange and blue) for X-Wing, Imperial accent (green and gray) for TIE.
@@ -181,7 +182,7 @@ Status: version 1.2.2 is published at https://github.com/j-mathes/Pilot-Editor a
   - [x] README with the version and version history, LICENSE (CC BY-NC-SA 4.0), and a footer with version, GitHub Pages and source links.
   - [x] Publish to GitHub and enable GitHub Pages.
   - [x] Manual browser, keyboard and narrow-viewport pass.
-  - [ ] Help panel, including notes on which byte regions are unknown and preserved.
+  - [x] Help panel (Help button or F1): opening and saving, editing, per-game notes, shortcuts, and the byte ranges no field maps to, computed from the field tables (`js/ui/help.js`).
   - [ ] Screen-reader and contrast pass on the tables and both themes.
 
 ### Still open

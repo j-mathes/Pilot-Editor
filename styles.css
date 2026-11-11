@@ -263,6 +263,15 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
 dialog h2 { margin-bottom: 4px; }
 dialog ul.plain { margin: 10px 0; max-height: 50vh; overflow: auto; }
 .dialog-actions { display: flex; justify-content: flex-end; }
+dialog.help { width: min(720px, 94vw); max-height: 86vh; }
+dialog.help[open] { display: flex; flex-direction: column; gap: 8px; }
+.help-head { display: flex; justify-content: space-between; align-items: center; }
+.help-body { overflow: auto; padding-right: 6px; }
+.help-body h3 { margin: 16px 0 6px; font-size: 15px; }
+.help-body h3:first-child { margin-top: 0; }
+.help-body h4 { margin: 10px 0 4px; font-size: 13px; color: var(--muted); }
+.help-body ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.help-body code { font-family: var(--mono); font-size: 12px; }
 .drop-overlay {
   position: fixed; inset: 0; z-index: 40; display: grid; place-items: center;
   background: rgba(0, 0, 0, .55); color: #fff; font-size: 22px; pointer-events: none;

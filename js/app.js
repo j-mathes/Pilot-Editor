@@ -144,6 +144,8 @@
     $('closeDrawer').addEventListener('click', () => shell.toggleDrawer(false));
     $('btnRestore').addEventListener('click', showRestore);
     $('closeRestore').addEventListener('click', () => $('restoreDialog').close());
+    $('btnHelp').addEventListener('click', () => PE.ui.help.open());
+    $('closeHelp').addEventListener('click', () => $('helpDialog').close());
     $('btnTheme').addEventListener('click', () =>
       shell.setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'));
     $('bannerClose').addEventListener('click', () => shell.banner(null));
@@ -175,6 +177,7 @@
     });
 
     document.addEventListener('keydown', e => {
+      if (e.key === 'F1') { e.preventDefault(); PE.ui.help.open(); return; }
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
       if (key === 'o') { e.preventDefault(); openPicker(); }

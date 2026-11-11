@@ -174,6 +174,16 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert.strictEqual(asked, 2, 'a clean pilot closes without asking');
   });
 
+  check('Help lists the unmapped byte ranges of both games and opens with F1', () => {
+    d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'F1', cancelable: true }));
+    const x = $('helpRegionsXwing').textContent, t = $('helpRegionsTie').textContent;
+    assert(/of 1705 bytes are not mapped/.test(x) && /\b1255-1586\b/.test(x), x);
+    assert(/of 1928 bytes are not mapped/.test(t), t);
+    const ranges = PE.ui.help.unknownRanges(PE.games.tie, 3856, 1928);
+    assert(ranges.every(([a, b]) => a <= b && b < 1928));
+    $('btnHelp').click();
+  });
+
   check('no script errors', () => assert.deepStrictEqual(errors, []));
   console.log(passed + ' UI checks passed');
   w.close();

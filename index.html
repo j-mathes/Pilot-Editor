@@ -42,6 +42,7 @@
         <input type="checkbox" id="optBackup" checked> Backup original
       </label>
       <button type="button" class="btn" id="btnTheme" title="Switch light or dark theme">Theme</button>
+      <button type="button" class="btn" id="btnHelp" title="How to use the editor (F1)">Help</button>
     </div>
   </header>
 
@@ -119,6 +120,64 @@
     <div class="dialog-actions"><button type="button" class="btn" id="closeRestore" title="Close this window">Close</button></div>
   </dialog>
 
+  <dialog id="helpDialog" class="help" aria-labelledby="helpTitle">
+    <div class="help-head">
+      <h2 id="helpTitle">Help</h2>
+      <button type="button" class="btn small" id="closeHelp" title="Close this window (Esc)">Close</button>
+    </div>
+    <div class="help-body" tabindex="0">
+      <h3>Opening and saving</h3>
+      <ul>
+        <li><strong>Open</strong> (Ctrl+O) or drop a file anywhere on the page. X-Wing <code>.plt</code> files (1705, 1706 or 3410 bytes) and TIE Fighter <code>.tfr</code> files (3856 bytes) are recognised by size. Files stay on your computer; nothing is uploaded.</li>
+        <li><strong>New pilot</strong> starts a blank pilot for either game. The TIE Fighter blank matches a pilot created in the 1994 and 1998 games. The X-Wing blank is based on a rookie pilot and the original premade pilots, and has not been checked against a pilot created in the game itself.</li>
+        <li><strong>Save</strong> (Ctrl+S) writes over the file in browsers that allow it (Chrome, Edge); otherwise it downloads a new copy and your original is untouched. <strong>Save as</strong> (Ctrl+Shift+S) always writes a new file.</li>
+        <li><strong>Backup original</strong> downloads the file as it was opened (<code>.bak</code>) before the first in-place save.</li>
+        <li><strong>Restore</strong> lists the 20 most recent files as they were opened, kept in this browser only.</li>
+        <li><strong>Close</strong> goes back to the start page and asks first if there are unsaved changes.</li>
+        <li>Files with two halves (TIE Fighter and the 3410-byte X-Wing file) hold the pilot twice; saving writes the active pilot to both halves.</li>
+      </ul>
+
+      <h3>Editing</h3>
+      <ul>
+        <li>Use the list on the left to jump between sections. Fields that differ from the opened file are highlighted.</li>
+        <li><strong>Undo</strong> (Ctrl+Z) and <strong>Redo</strong> (Ctrl+Y) cover every edit, bulk action and preset.</li>
+        <li><strong>Changes</strong> lists every changed field with its old and new value, a Revert button for each, and Revert all. It also lists warnings.</li>
+        <li><strong>Warnings</strong> are advice, for example a rank that does not match the score. They never block saving.</li>
+        <li>Number fields stay within the range the file can hold; hover a field for its range and notes. A value already outside the usual range in an opened file is kept and flagged, not changed.</li>
+        <li><strong>Presets</strong> apply a Top Ace pilot or reset every field to a new pilot. Bulk buttons (Mark all complete, Clear scores and so on) change many fields at once and can be undone. Scores are only changed by the buttons that say so.</li>
+        <li>Calculated values shown beside editable ones, such as hit percentages and battle totals, are for reference.</li>
+        <li><strong>Raw bytes</strong> shows the file bytes. Bright bytes belong to an editable field; dim bytes are unknown and kept as they are.</li>
+        <li>The name box sets the file name; the games use it as the pilot name.</li>
+      </ul>
+
+      <h3>X-Wing notes</h3>
+      <ul>
+        <li>Tours 4 and 5 store their operations in interleaved a/b slots. Operations completed counts a pair once, and the last completed slot is a slot position, not a count. The editor warns when the two disagree.</li>
+        <li>Training levels have no cap of 8; pilots that flew past the eight main levels load and save unchanged.</li>
+        <li>Rank, medal and Kalidor Crescent checks are warnings only.</li>
+      </ul>
+
+      <h3>TIE Fighter notes</h3>
+      <ul>
+        <li>Training, per craft: next level (the level picked at the start, counting from 0, so 2 means level 3), highest level completed (2 for a new pilot, 4 earns the training badge) and best score. The game keeps the highest of each; every run is logged in a separate <code>TRAIN.HGH</code> file, which this editor does not open. Only seven craft exist.</li>
+        <li>Objectives are bitmasks counted goal by goal. Slots with no goal seen in the original Top Ace pilots (battles 11 to 13 especially) are dimmed.</li>
+      </ul>
+
+      <h3>Unknown bytes are kept</h3>
+      <p>Only mapped fields are written. Every other byte is kept exactly as it was opened, so saving cannot damage data the editor does not understand. These are the byte ranges no field maps to, read from the field tables.</p>
+      <h4>X-Wing (1705-byte layout)</h4>
+      <ul id="helpRegionsXwing"></ul>
+      <h4>TIE Fighter (active half, bytes 0 to 1927)</h4>
+      <ul id="helpRegionsTie"></ul>
+      <p class="hint">In the 1706-byte X-Wing layout everything from byte 735 on sits one byte later.</p>
+
+      <h3>Shortcuts</h3>
+      <ul>
+        <li>Ctrl+O open, Ctrl+S save, Ctrl+Shift+S save as, Ctrl+Z undo, Ctrl+Y redo, F1 help, Esc closes this window.</li>
+      </ul>
+    </div>
+  </dialog>
+
   <div class="drop-overlay" id="dropOverlay" hidden><p>Drop a pilot file to open it</p></div>
 
   <script src="js/core/binary.js"></script>
@@ -128,6 +187,7 @@
   <script src="js/ui/widgets.js"></script>
   <script src="js/ui/sections.js"></script>
   <script src="js/ui/shell.js"></script>
+  <script src="js/ui/help.js"></script>
   <script src="js/games/xwing.js"></script>
   <script src="js/games/tie.js"></script>
   <script src="js/app.js"></script>
