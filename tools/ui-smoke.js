@@ -199,6 +199,38 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert(card.contains(d.activeElement));
   });
 
+  check('Enforce rules: choosing a rank adjusts the score and says so', () => {
+    PE.app.newPilot('xwing');
+    $('optEnforce').checked = true;
+    $('optEnforce').dispatchEvent(new w.Event('change'));
+    const rank = d.querySelector('select[aria-label="Rank"]');
+    rank.value = '5';
+    rank.dispatchEvent(new w.Event('change'));
+    assert.strictEqual(PE.app.session.state.get('pilot.score'), 500000);
+    assert(/Rules adjusted/.test($('bannerText').textContent));
+    assert(/Tour of Duty points: 0 \u2192 500,000/.test($('bannerList').textContent), $('bannerList').textContent);
+    $('btnUndo').click();
+    assert.strictEqual(PE.app.session.state.get('pilot.score'), 0);
+    $('optEnforce').checked = false;
+    $('optEnforce').dispatchEvent(new w.Event('change'));
+    assert.strictEqual(PE.app.session.state.enforcing(), false);
+  });
+
+  check('Warnings the editor cannot enforce are shown on the Changes button and repeated after an enforced edit', () => {
+    PE.app.newPilot('tie');
+    $('optEnforce').checked = true;
+    $('optEnforce').dispatchEvent(new w.Event('change'));
+    assert($('warnBadge').hidden, 'a new pilot has no warnings');
+    PE.app.session.state.set('pilot.secret', 2);
+    assert.strictEqual(PE.app.session.state.get('pilot.score'), 50000);
+    assert(/Not enforced: Second Circle normally needs 4 missions/.test($('bannerList').textContent), $('bannerList').textContent);
+    assert(!$('warnBadge').hidden && /^\d+ warning/.test($('warnBadge').title), $('warnBadge').title);
+    PE.app.loadBytes('RUSTY2.tfr', read('reference/TIE-Fighter/RUSTY2.tfr'), null);
+    assert(/stay as they are/.test($('bannerList').textContent), $('bannerList').textContent);
+    $('optEnforce').checked = false;
+    $('optEnforce').dispatchEvent(new w.Event('change'));
+  });
+
   check('Help lists the unmapped byte ranges of both games and opens with F1', () => {
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'F1', cancelable: true }));
     const x = $('helpRegionsXwing').textContent, t = $('helpRegionsTie').textContent;

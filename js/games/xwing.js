@@ -171,8 +171,8 @@
 
   const derived = {
     'medal.kalidorEarned': {
-      label: 'Level the recorded scores support',
-      hint: 'Highest Kalidor Crescent level the operation scores in this file reach. Scores that were cleared will understate it.',
+      label: 'Highest level your mission scores qualify for',
+      hint: 'The highest Kalidor Crescent level the Tour of Duty operation scores saved in this file are good enough for (10,000 for the first level, up to 20,000 for the last, each from a different mission). If you cleared scores it can read lower than the medal you hold.',
       compute: g => KALIDOR[kalidorLevel(g)],
       sync: { id: 'medal.kalidor', label: 'Set the Kalidor Crescent to this level', value: kalidorLevel }
     },
@@ -312,6 +312,11 @@
       if (medal && !complete) out.push({ id: 'medal.' + key, level: 'info', text: 'This medal is awarded for completing Tour ' + (t + 1) + ', which is not marked Complete.' });
       if (complete && !medal) out.push({ id: 'medal.' + key, level: 'info', text: 'Tour ' + (t + 1) + ' is Complete but its medal is not set.' });
     });
+    const kalidor = get('medal.kalidor');
+    const supported = kalidorLevel(get);
+    if (supported > kalidor) {
+      out.push({ id: 'medal.kalidor', level: 'info', text: 'The operation scores in this file qualify for the ' + KALIDOR[supported] + ', but the Kalidor Crescent is set to ' + (KALIDOR[kalidor] || kalidor) + '.' });
+    }
     const active = [];
     TOUR_SLOTS.forEach((_, t) => {
       const ops = get('tour.' + t + '.ops');
@@ -353,6 +358,33 @@
     return out;
   }
 
+  const HIT_TO_FIRED = {
+    'stat.laserCraft': 'stat.laserFired', 'stat.laserGround': 'stat.laserFired',
+    'stat.missileCraft': 'stat.missileFired', 'stat.missileGround': 'stat.missileFired'
+  };
+
+  // Rules applied when the user turns on "Enforce rules"; each follows a warning above.
+  function enforce(id, value, api) {
+    if (id === 'pilot.rank' || id === 'pilot.score') { PE.rules.rankScore(api, id, RANK_POINTS, 3); return; }
+    if (/^tour\.\d\.op\.\d+$/.test(id)) {
+      const level = kalidorLevel(api.get);
+      if (level > api.get('medal.kalidor')) api.set('medal.kalidor', level);
+      return;
+    }
+    let m = /^tour\.(\d)\.status$/.exec(id);
+    if (m && value === 3) {
+      const t = Number(m[1]);
+      api.set('medal.' + MEDAL_KEYS[t], true);
+      api.set('tour.' + t + '.ops', TOUR_OPS[t]);
+      return;
+    }
+    m = /^medal\.(\w+)$/.exec(id);
+    const t = m ? MEDAL_KEYS.indexOf(m[1]) : -1;
+    if (t >= 0 && value && api.get('tour.' + t + '.status') !== 3) { api.set('tour.' + t + '.status', 3); return; }
+    if (t >= 0 && !value && api.get('tour.' + t + '.status') === 3) { api.set('tour.' + t + '.status', 2); return; }
+    PE.rules.hitsWithinFired(api, id, value, HIT_TO_FIRED);
+  }
+
   function blank() {
     const b = new Uint8Array(1705);
     // 0xFF means "no operation completed yet" for each tour, as in ROOKIE.PLT.
@@ -362,11 +394,11 @@
 
   const presets = [{
     label: 'Top Ace',
-    title: 'Max rank, experience, medals and training; complete historic missions and Tours 1 to 3',
+    title: 'Max rank, experience, medals and training; complete historic missions and Tours 1 to 3 (with Enforce rules on, the medals for Tours 4 and 5 also complete those tours)',
     run: api => {
       api.set('pilot.health', 0);
-      api.set('pilot.rank', 5);
       api.set('pilot.score', 9999);
+      api.set('pilot.rank', 5);
       api.set('pilot.experience', 65535);
       ['corellian', 'mantooine', 'alderaan', 'yavin', 'hoth'].forEach(k => api.set('medal.' + k, true));
       api.set('medal.kalidor', 6);
@@ -393,7 +425,7 @@
       3410: { half: 1705 }
     },
     theme: { accent: '#e8832a', accent2: '#3d7fd6', glyph: 'X' },
-    fields, derived, sections, onChange, warnings, blank, presets,
+    fields, derived, sections, onChange, enforce, warnings, blank, presets,
     summary: g => (RANKS[g('pilot.rank')] || 'Unknown rank') + ' · ' + (HEALTH[g('pilot.health')] || 'Unknown health') +
       ' · ' + g('pilot.score').toLocaleString('en-US') + ' Tour of Duty points'
   };

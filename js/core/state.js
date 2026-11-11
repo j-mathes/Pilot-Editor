@@ -18,6 +18,9 @@
     let cleanMark = 0;
     let cleanValid = true;
     let warningCache = null;
+    let enforce = false;
+    let ruleDepth = 0;
+    let adjusted = null; // rule-made edits of the current top-level set, for the user message
 
     const state = { def, variant, name, get length() { return sourceBytes.length; } };
 
@@ -83,18 +86,58 @@
 
     state.get = id => values[id];
 
+    // Applies one value, then the game's onChange sync and, when enforcing, its rules.
+    function applySet(id, v, viaRule) {
+      const before = values[id];
+      if (!setRaw(id, v)) return false;
+      if (viaRule && adjusted) adjusted.push({ id, before });
+      if (def.onChange) def.onChange(id, v, hookApi);
+      if (enforce && def.enforce && ruleDepth < 8) {
+        ruleDepth++;
+        try { def.enforce(id, v, ruleApi); } finally { ruleDepth--; }
+      }
+      return true;
+    }
+
+    const ruleApi = {
+      get: id => values[id],
+      set(id, value) {
+        const f = index.get(id);
+        if (!f) throw new Error('Unknown field ' + id);
+        const v = coerce(f, value);
+        if (v !== null) applySet(id, v, true);
+      }
+    };
+
     state.set = function (id, value) {
       const f = index.get(id);
       if (!f) throw new Error('Unknown field ' + id);
       const v = coerce(f, value);
       if (v === null) return false;
+      const outer = !pending;
+      if (outer) adjusted = [];
       let changed = false;
-      batch(() => {
-        changed = setRaw(id, v);
-        if (changed && def.onChange) def.onChange(id, v, hookApi);
-      });
+      let list = null;
+      try {
+        batch(() => { changed = applySet(id, v, false); });
+      } finally {
+        if (outer) { list = adjusted; adjusted = null; }
+      }
+      if (list && changed && state.onAdjust) {
+        const seen = new Set();
+        const out = [];
+        for (const a of list) {
+          if (seen.has(a.id) || a.id === id) continue;
+          seen.add(a.id);
+          if (values[a.id] !== a.before) out.push({ id: a.id, field: index.get(a.id), from: a.before, to: values[a.id] });
+        }
+        if (out.length) state.onAdjust(out, id);
+      }
       return changed;
     };
+
+    state.setEnforce = on => { enforce = !!on; };
+    state.enforcing = () => enforce;
 
     state.batch = function (fn) {
       batch(() => fn({

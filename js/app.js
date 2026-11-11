@@ -17,6 +17,13 @@
     session.handle = handle || null;
     session.openedBytes = new Uint8Array(bytes);
     session.backupDone = false;
+    state.setEnforce($('optEnforce').checked);
+    state.onAdjust = (list, editedId) => {
+      const touched = new Set([editedId, ...list.map(c => c.id)]);
+      const open = state.warnings().filter(w => w.id && touched.has(w.id)).map(w => 'Not enforced: ' + w.text);
+      shell.banner('Rules adjusted related fields (Undo reverts them together with your edit):', 'info',
+        list.map(c => c.field.label + ': ' + shell.describe(c.field, c.from) + ' \u2192 ' + shell.describe(c.field, c.to)).concat(open));
+    };
     shell.show(state);
   }
 
@@ -35,6 +42,10 @@
       notes.push('The backup half of this file differs from the active pilot. Saving will overwrite it with the active pilot (the original stays in Restore).');
     }
     startSession(state, handle, bytes);
+    const existing = state.warnings().length;
+    if (state.enforcing() && existing) {
+      notes.push('Enforce rules only applies to your edits, so the ' + existing + (existing === 1 ? ' warning' : ' warnings') + ' already in this file stay as they are (see Changes).');
+    }
     shell.banner('Opened ' + name + ' as a ' + det.def.name + ' pilot (' + bytes.length + ' bytes).', notes.length ? 'warn' : 'info', notes);
     PE.files.snapshots.save(name, det.def.id, bytes).catch(() => { /* snapshots are best effort */ });
   }
@@ -145,6 +156,15 @@
     $('btnRestore').addEventListener('click', showRestore);
     $('closeRestore').addEventListener('click', () => $('restoreDialog').close());
     $('btnHelp').addEventListener('click', () => PE.ui.help.open());
+    try { $('optEnforce').checked = localStorage.getItem('pilot-editor-enforce') === '1'; } catch (e) { /* storage unavailable */ }
+    $('optEnforce').addEventListener('change', e => {
+      try { localStorage.setItem('pilot-editor-enforce', e.target.checked ? '1' : '0'); } catch (err) { /* storage unavailable */ }
+      if (!session.state) return;
+      session.state.setEnforce(e.target.checked);
+      shell.banner(e.target.checked
+        ? 'Rules are enforced: edits that break a game rule also adjust the related field. Existing mismatches are not changed.'
+        : 'Rules are not enforced: warnings only.', 'info');
+    });
     $('closeHelp').addEventListener('click', () => $('helpDialog').close());
     $('btnTheme').addEventListener('click', () =>
       shell.setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'));

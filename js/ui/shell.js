@@ -62,6 +62,12 @@
     const n = s.changes().length;
     $('changeCount').textContent = n ? String(n) : '';
     $('changeCount').hidden = !n;
+    const w = s.warnings().length;
+    const badge = $('warnBadge');
+    badge.textContent = w ? String(w) : '';
+    badge.hidden = !w;
+    badge.title = w + (w === 1 ? ' warning' : ' warnings') + ' (see Changes)';
+    badge.setAttribute('aria-label', badge.title);
   }
 
   function updateDrawer() {
@@ -175,5 +181,5 @@
     setTheme(mode);
   }
 
-  PE.ui.shell = { $, show, banner, updateHeader, updateDrawer, toggleDrawer, setTheme, initTheme, applyTheme, current: () => current };
+  PE.ui.shell = { $, show, banner, updateHeader, updateDrawer, toggleDrawer, setTheme, initTheme, applyTheme, describe, current: () => current };
 })(globalThis);

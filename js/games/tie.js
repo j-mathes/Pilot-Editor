@@ -56,6 +56,9 @@
   const BONUS_GOALS = [6, 4, 5, 2, 5, 4, 4, 4, 6, 5];
   // Accumulated score for each rank, from the guide's scoring appendix.
   const RANK_POINTS = [0, 20000, 50000, 100000, 250000, 500000];
+  // Secret Order levels 1 to 6 (guide): score needed and missions with secondary goals needed.
+  const SECRET_POINTS = [20000, 50000, 100000, 250000, 400000, 800000];
+  const SECRET_MISSIONS = [2, 4, 6, 9, 12, 15];
   const NPC = ['X-Wing', 'Y-Wing', 'A-Wing', 'B-Wing', 'TIE Fighter', 'TIE Interceptor', 'TIE Bomber', 'TIE Advanced',
     'TIE Defender', 'TIE New 1', 'TIE New 2', 'Missile Boat', 'T-Wing', 'Z-95 Headhunter', 'R-41 Starchaser',
     'Assault Gunboat', 'Tyderian Shuttle', 'Escort Shuttle', 'Patrol Craft', 'Scout Craft', 'Transport',
@@ -237,6 +240,12 @@
     { id: 'raw', title: 'Raw bytes', blocks: [{ type: 'hex' }] }
   ];
 
+  const secondaryGoalsDone = get => {
+    let n = 0;
+    for (let b = 0; b < BATTLES.length; b++) for (let v = get('battle.' + b + '.secondary'); v; v >>= 1) n += v & 1;
+    return n;
+  };
+
   function warnings(get) {
     const out = [];
     const rank = get('pilot.rank');
@@ -250,6 +259,16 @@
         break;
       }
     }
+    const secret = get('pilot.secret');
+    if (secret >= 1 && secret <= SECRET_POINTS.length) {
+      if (score < SECRET_POINTS[secret - 1]) {
+        out.push({ id: 'pilot.secret', level: 'info', text: SECRET[secret] + ' normally needs a score of ' + SECRET_POINTS[secret - 1].toLocaleString('en-US') + '; this pilot has ' + score.toLocaleString('en-US') + '.' });
+      }
+      const goals = secondaryGoalsDone(get);
+      if (goals < SECRET_MISSIONS[secret - 1]) {
+        out.push({ id: 'pilot.secret', level: 'info', text: SECRET[secret] + ' normally needs ' + SECRET_MISSIONS[secret - 1] + ' missions with secondary goals, so at least that many secondary goals ticked; this pilot has ' + goals + '.' });
+      }
+    }
     if (get('stat.laserHit') > get('stat.laserFired')) out.push({ id: 'stat.laserHit', level: 'warn', text: 'Laser hits exceed lasers fired.' });
     if (get('stat.warheadHit') > get('stat.warheadFired')) out.push({ id: 'stat.warheadHit', level: 'warn', text: 'Warhead hits exceed warheads fired.' });
     const sum = sumNpc(get);
@@ -260,6 +279,19 @@
       }
     });
     return out;
+  }
+
+  const HIT_TO_FIRED = { 'stat.laserHit': 'stat.laserFired', 'stat.warheadHit': 'stat.warheadFired' };
+
+  // Rules applied when the user turns on "Enforce rules"; each follows a warning above.
+  function enforce(id, value, api) {
+    if (id === 'pilot.rank' || id === 'pilot.score') PE.rules.rankScore(api, id, RANK_POINTS, 1);
+    if (id === 'pilot.score' || id === 'pilot.secret') { PE.rules.secretScore(api, id, SECRET_POINTS); return; }
+    if (id === 'pilot.rank') return;
+    const m = /^battle\.(\d+)\.status$/.exec(id);
+    if (m && value === 3) { api.set('battle.' + m[1] + '.last', 8); return; }
+    if (/^stat\.npc\.\d+$/.test(id)) { api.set('stat.kills', sumNpc(api.get)); return; }
+    PE.rules.hitsWithinFired(api, id, value, HIT_TO_FIRED);
   }
 
   // Identical to a pilot created in the game (RUSTY-1.TFR): difficulty Medium and twelve training bytes at 2.
@@ -303,7 +335,7 @@
     ext: ['.tfr'],
     variants: { 3856: { half: 1928 } },
     theme: { accent: '#4fae6a', accent2: '#8d99a6', glyph: 'T' },
-    fields, derived, sections, warnings, blank, presets,
+    fields, derived, sections, enforce, warnings, blank, presets,
     summary: g => (RANKS[g('pilot.rank')] || 'Unknown rank') + ' · ' + (HEALTH[g('pilot.health')] || 'Unknown status') +
       ' · score ' + g('pilot.score').toLocaleString('en-US')
   };

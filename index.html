@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pilot Editor</title>
   <meta name="application-name" content="Pilot Editor">
-  <meta name="version" content="1.3.0">
+  <meta name="version" content="1.4.0">
   <link rel="canonical" href="https://j-mathes.github.io/Pilot-Editor/">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -35,11 +35,14 @@
       <button type="button" class="btn" id="btnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
       <select id="presetSelect" class="btn" aria-label="Presets" title="Apply a preset to this pilot (can be undone)" disabled></select>
       <button type="button" class="btn" id="btnChanges" aria-expanded="false" aria-controls="drawer" title="Show changes since the file was opened or saved, and warnings" disabled>
-        Changes <span class="count" id="changeCount" hidden></span>
+        Changes <span class="count" id="changeCount" hidden></span> <span class="count warn" id="warnBadge" hidden></span>
       </button>
       <button type="button" class="btn" id="btnRestore" title="Copies of files as they were opened">Restore</button>
       <label class="opt" title="On the first in-place save, also download the file as it was opened (.bak)">
         <input type="checkbox" id="optBackup" checked> Backup original
+      </label>
+      <label class="opt" title="Keep related values consistent with the game's rules as you edit, for example choosing the rank General raises the score to 500,000. Changes made this way are listed and can be undone.">
+        <input type="checkbox" id="optEnforce"> Enforce rules
       </label>
       <button type="button" class="btn" id="btnTheme" title="Switch light or dark theme">Theme</button>
       <button type="button" class="btn" id="btnHelp" title="How to use the editor (F1)">Help</button>
@@ -107,7 +110,7 @@
   </div>
 
   <footer class="site-footer">
-    <span id="appVersion">Pilot Editor v1.3.0</span>
+    <span id="appVersion">Pilot Editor v1.4.0</span>
     <a href="https://j-mathes.github.io/Pilot-Editor/" target="_blank" rel="noopener" title="The hosted version of this editor on GitHub Pages">GitHub Pages</a>
     <a href="https://github.com/j-mathes/Pilot-Editor" target="_blank" rel="noopener" title="Source code, README and version history">Source on GitHub</a>
     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener" title="Creative Commons Attribution-NonCommercial-ShareAlike 4.0">CC BY-NC-SA 4.0</a>
@@ -144,6 +147,13 @@
         <li><strong>Changes</strong> lists every changed field with its old and new value, a Revert button for each, and Revert all. It also lists warnings.</li>
         <li><strong>Warnings</strong> are advice, for example a rank that does not match the score. They never block saving.</li>
         <li>Number fields stay within the range the file can hold; hover a field for its range and notes. A value already outside the usual range in an opened file is kept and flagged, not changed.</li>
+        <li><strong>Enforce rules</strong> (off by default) keeps related values consistent with the game's rules as you edit, and a message lists what it changed; Undo reverts it together with your edit. It does not change values that already break a rule when a file is opened. Rules it cannot enforce stay as warnings: the number on the Changes button, a ! beside the field and the Warnings list; after an enforced edit the message repeats any that still apply to the fields involved.
+          <ul>
+            <li>Rank and score: choosing a rank raises the score to what it needs (Flight Officer 20,000, Lieutenant 50,000, Captain 100,000, Commander 250,000, General 500,000) or lowers it just under the next rank; changing the score changes the rank to match. X-Wing keeps Lieutenant, which training can earn.</li>
+            <li>X-Wing: marking a tour Complete fills its operations and sets its medal, and setting a medal marks its tour Complete the same way; clearing the medal of a Complete tour makes it Incomplete. The Kalidor Crescent is raised to the highest level the operation scores qualify for (it is never lowered, since scores may have been cleared). Hits cannot exceed lasers or missiles fired.</li>
+            <li>TIE Fighter: marking a battle Done sets last mission completed to 8; editing kills by type updates total kills. Laser and warhead hits cannot exceed those fired. Secret Order levels 1 to 6 need the guide's score (20,000, 50,000, 100,000, 250,000, 400,000, 800,000): choosing a level raises the score, and lowering the score lowers the level. The guide also asks for missions with secondary goals; the editor warns when too few secondary goals are ticked but does not tick any for you. Values 7 to 9 have no rule.</li>
+          </ul>
+        </li>
         <li><strong>Presets</strong> apply a Top Ace pilot or reset every field to a new pilot. Bulk buttons (Mark all complete, Clear scores and so on) change many fields at once and can be undone. Scores are only changed by the buttons that say so.</li>
         <li>Calculated values shown beside editable ones, such as hit percentages and battle totals, are for reference.</li>
         <li><strong>Raw bytes</strong> shows the file bytes. Bright bytes belong to an editable field (double-click one to jump to that field); dim bytes are unknown and kept as they are. Hover a byte for its address in hex and decimal.</li>
@@ -183,6 +193,7 @@
   <script src="js/core/binary.js"></script>
   <script src="js/core/codec.js"></script>
   <script src="js/core/state.js"></script>
+  <script src="js/core/rules.js"></script>
   <script src="js/core/files.js"></script>
   <script src="js/ui/widgets.js"></script>
   <script src="js/ui/sections.js"></script>

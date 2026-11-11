@@ -88,6 +88,7 @@ select.btn { padding-right: 6px; }
   display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 999px;
   background: var(--accent); color: #fff; font-size: 11px; text-align: center;
 }
+.count.warn { background: var(--warn); color: #000; }
 
 /* ---- banner ---- */
 .banner {

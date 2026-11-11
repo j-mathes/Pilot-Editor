@@ -6,7 +6,7 @@ const assert = require('assert');
 
 const root = path.join(__dirname, '..');
 const ctx = vm.createContext({ console });
-for (const f of ['js/core/binary.js', 'js/core/codec.js', 'js/core/state.js', 'js/core/files.js', 'js/games/xwing.js', 'js/games/tie.js']) {
+for (const f of ['js/core/binary.js', 'js/core/codec.js', 'js/core/state.js', 'js/core/rules.js', 'js/core/files.js', 'js/games/xwing.js', 'js/games/tie.js']) {
   vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 }
 const PE = vm.runInContext('PilotEditor', ctx);
@@ -237,6 +237,110 @@ test('TIE: LUKE-2 training (started at level 3, finished level 7, score 29530)',
   assert.strictEqual(b[90], 7);
   assert.strictEqual(b[29], 2);
   assert.strictEqual(b[42] | (b[43] << 8), 29530);
+});
+
+test('Enforce rules: off by default, and rank and score move together when on', () => {
+  const st = PE.createState(PE.games.xwing, 'NEW', PE.games.xwing.blank());
+  st.set('pilot.rank', 5);
+  assert.strictEqual(st.get('pilot.score'), 0, 'nothing is adjusted while rules are off');
+  st.undo();
+  st.setEnforce(true);
+  const seen = [];
+  st.onAdjust = list => seen.push(...list.map(c => c.id + ':' + c.from + '>' + c.to));
+  st.set('pilot.rank', 5);
+  assert.strictEqual(st.get('pilot.score'), 500000);
+  assert.deepStrictEqual(Array.from(seen), ['pilot.score:0>500000']);
+  st.undo();
+  assert.strictEqual(st.get('pilot.rank') + ':' + st.get('pilot.score'), '0:0', 'one undo reverts the edit and the adjustment');
+  st.set('pilot.score', 260000);
+  assert.strictEqual(st.get('pilot.rank'), 4, 'score earns the rank');
+  st.set('pilot.rank', 3);
+  assert.strictEqual(st.get('pilot.score'), 249999, 'a lower rank caps the score');
+  st.set('pilot.rank', 5);
+  st.set('pilot.score', 0);
+  assert.strictEqual(st.get('pilot.rank'), 2, 'X-Wing keeps Lieutenant, which training can earn');
+  const tie = PE.createState(PE.games.tie, 'NEW', PE.games.tie.blank());
+  tie.setEnforce(true);
+  tie.set('pilot.rank', 2);
+  assert.strictEqual(tie.get('pilot.score'), 50000);
+  tie.set('pilot.score', 0);
+  assert.strictEqual(tie.get('pilot.rank'), 0);
+});
+
+test('Enforce rules: tours, medals, weapons, battles and kill totals', () => {
+  const x = PE.createState(PE.games.xwing, 'NEW', PE.games.xwing.blank());
+  x.setEnforce(true);
+  x.set('tour.2.status', 3);
+  assert.strictEqual(x.get('medal.alderaan'), true);
+  assert.strictEqual(x.get('tour.2.ops'), 14);
+  x.set('medal.alderaan', false);
+  assert.strictEqual(x.get('tour.2.status'), 2);
+  x.set('medal.hoth', true);
+  assert.strictEqual(x.get('tour.4.status'), 3, 'a medal completes its tour');
+  assert.strictEqual(x.get('tour.4.ops'), 20);
+  x.set('stat.laserCraft', 50);
+  assert.strictEqual(x.get('stat.laserFired'), 50);
+  x.set('stat.laserFired', 20);
+  assert.strictEqual(x.get('stat.laserCraft'), 20);
+  const t = PE.createState(PE.games.tie, 'NEW', PE.games.tie.blank());
+  t.setEnforce(true);
+  t.set('battle.0.status', 3);
+  assert.strictEqual(t.get('battle.0.last'), 8);
+  t.set('stat.npc.0', 7);
+  t.set('stat.npc.3', 5);
+  assert.strictEqual(t.get('stat.kills'), 12);
+  t.set('stat.warheadHit', 9);
+  assert.strictEqual(t.get('stat.warheadFired'), 9);
+});
+
+test('Enforce rules: presets and resets end consistent and leave no warnings about rank', () => {
+  for (const [def, preset] of [[PE.games.xwing, 0], [PE.games.tie, 0], [PE.games.tie, 1]]) {
+    const st = PE.createState(def, 'NEW', def.blank());
+    st.setEnforce(true);
+    st.batch(api => def.presets[preset].run(api));
+    assert.strictEqual(st.get('pilot.rank'), 5);
+    assert(st.get('pilot.score') >= 500000, def.id + ' score ' + st.get('pilot.score'));
+    assert.deepStrictEqual(Array.from(st.warnings().filter(w => w.id === 'pilot.rank')), []);
+  }
+});
+
+test('Enforce rules: Secret Order level follows the score, and pilots made in the game have no Secret Order warnings', () => {
+  for (const name of ['RUSTY.tfr', 'RUSTY (2).tfr', 'RUSTY3.tfr', 'RUSTY2.tfr', 'TOPACE7.TFR', 'TOPACE10.TFR']) {
+    const s = samples.find(x => x.name === name);
+    const st = PE.createState(PE.games.tie, name, s.bytes);
+    assert.deepStrictEqual(Array.from(st.warnings().filter(w => w.id === 'pilot.secret')), [], name);
+  }
+  const t = PE.createState(PE.games.tie, 'NEW', PE.games.tie.blank());
+  t.setEnforce(true);
+  t.set('pilot.secret', 6);
+  assert.strictEqual(t.get('pilot.score'), 800000);
+  assert.strictEqual(t.get('pilot.rank'), 5, 'the score also earns the rank');
+  t.set('pilot.score', 60000);
+  assert.strictEqual(t.get('pilot.secret'), 2);
+  t.set('pilot.secret', 9);
+  assert.strictEqual(t.get('pilot.score'), 60000, 'values beyond the guide have no rule');
+  const open = PE.createState(PE.games.tie, 'NEW', PE.games.tie.blank());
+  open.set('pilot.secret', 4);
+  assert(open.warnings().some(w => w.id === 'pilot.secret'), 'a warning without enforcement');
+});
+
+test('Enforce rules: Kalidor Crescent follows the operation scores; game-made pilots have no medal warnings', () => {
+  for (const name of ['CALE.PLT', 'NOKSP.PLT', 'TOPACE.PLT']) {
+    const s = samples.find(x => x.name === name);
+    const st = PE.createState(PE.games.xwing, name, s.bytes);
+    assert.deepStrictEqual(Array.from(st.warnings().filter(w => /^medal\./.test(w.id || ''))), [], name);
+  }
+  const x = PE.createState(PE.games.xwing, 'NEW', PE.games.xwing.blank());
+  x.set('tour.0.op.0', 10000);
+  assert.strictEqual(x.get('medal.kalidor'), 0, 'nothing is adjusted while rules are off');
+  assert(x.warnings().some(w => w.id === 'medal.kalidor'));
+  x.setEnforce(true);
+  x.set('tour.0.op.1', 10000);
+  assert.strictEqual(x.get('medal.kalidor'), 1);
+  x.set('tour.0.op.0', 12000);
+  assert.strictEqual(x.get('medal.kalidor'), 2);
+  x.set('tour.0.op.0', 0);
+  assert.strictEqual(x.get('medal.kalidor'), 2, 'cleared scores do not take the medal away');
 });
 
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
