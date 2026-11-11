@@ -135,7 +135,8 @@
         let cells = '';
         for (let i = start; i < end; i++) {
           const cls = (owners[i] ? 'k' : 'u') + (now[i] !== src[i] ? ' c' : '');
-          const title = owners[i] ? ' title="' + esc(fieldLabel.get(owners[i])) + '"' : '';
+          const addr = '0x' + PE.bin.hex(i, 4) + ' (' + i + ')';
+          const title = ' title="' + addr + (owners[i] ? ' · ' + esc(fieldLabel.get(owners[i])) : '') + '"';
           cells += '<span class="' + cls + '"' + title + '>' + PE.bin.hex(now[i]) + '</span>';
         }
         html += '<div class="hex-row"><span class="hex-off">' + PE.bin.hex(start, 4) + '</span>' + cells + '</div>';

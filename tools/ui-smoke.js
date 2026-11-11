@@ -174,6 +174,15 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert.strictEqual(asked, 2, 'a clean pilot closes without asking');
   });
 
+  check('hex byte tooltips start with the hex and decimal address', () => {
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    const cells = d.querySelectorAll('.hex-row span:not(.hex-off)');
+    assert(/^0x0000 \(0\)/.test(cells[0].title), cells[0].title);
+    assert(/^0x00FF \(255\)/.test(cells[255].title), cells[255].title);
+    const owned = d.querySelector('.hex-row span.k');
+    assert(/^0x[0-9A-F]{4} \(\d+\) · \S/.test(owned.title), owned.title);
+  });
+
   check('Help lists the unmapped byte ranges of both games and opens with F1', () => {
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'F1', cancelable: true }));
     const x = $('helpRegionsXwing').textContent, t = $('helpRegionsTie').textContent;
