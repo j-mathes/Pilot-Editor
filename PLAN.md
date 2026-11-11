@@ -117,7 +117,7 @@ Also carried over:
   - **Stats:** a searchable, sortable list of NPC kill and capture counts; weapon accuracy shown as a bar with a percentage.
   - **Campaign (TIE):** 13 collapsible battle cards with a status badge and a progress bar, "Secondary" and "Bonus" objective labels, "Last mission completed" limited to 0-8 (8 = finished, as the games use it), and an Active Battle selector (legacy has none).
   - **Campaign (X-Wing):** 5 tour cards with a status control and progress bar, correct 6A/6B-style operation labels, and only one Active tour at a time, kept in sync with the current tour.
-  - **Raw/Hex:** a read-only hex view of the file with a changed-bytes diff against the original, to help with the unknown regions.
+  - **Raw/Hex:** a read-only hex view of the file with a changed-bytes diff against the original, to help with the unknown regions. Hovering a byte shows its address in hex and decimal and its field; double-clicking a mapped byte jumps to that field (opening a collapsed card or clearing a table filter).
 - **Widgets:** number fields select on focus, clamp, show min/max in a tooltip and never throw on out-of-range loads (they show a warning chip); enum selects show full names (e.g. "Rebel Cruiser (CNVYR)"); TIE training-completed shows labelled options with unknown values still editable; the bitmask checklist clears a flag when unchecked.
 - **Workflow helpers:**
   - Undo/redo, grouped per edit.
@@ -167,7 +167,7 @@ Also carried over:
 
 ## Delivery order
 
-Status: version 1.2.2 is published at https://github.com/j-mathes/Pilot-Editor and on GitHub Pages (https://j-mathes.github.io/Pilot-Editor/). Phases 0-6 are implemented and pass `node tools/test.js` (55 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (13 checks). The version number changes only when the owner says so.
+Status: version 1.3.0 is published at https://github.com/j-mathes/Pilot-Editor and on GitHub Pages (https://j-mathes.github.io/Pilot-Editor/). Phases 0-6 are implemented and pass `node tools/test.js` (55 checks) and the jsdom page check `node tools/ui-smoke.js <path to jsdom>` (13 checks). The version number changes only when the owner says so.
 
 - [x] **0. Verification script:** `tools/test.js` loads the browser scripts into a `vm` context and checks every sample. The one-off probe scripts used to settle the open points are removed.
 - [x] **1. Core and shell:** binary helpers, codec, game registry, detection, open, save, new, banner errors, dirty tracking.

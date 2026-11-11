@@ -120,7 +120,7 @@
     return h('div', { class: 'cards' }, cards);
   }
 
-  function hexBlock(state) {
+  function hexBlock(state, widgets) {
     const def = state.def;
     const owners = PE.codec.owners(def, state.length);
     const fieldLabel = new Map(def.fields.map(f => [f.id, f.label]));
@@ -137,7 +137,7 @@
           const cls = (owners[i] ? 'k' : 'u') + (now[i] !== src[i] ? ' c' : '');
           const addr = '0x' + PE.bin.hex(i, 4) + ' (' + i + ')';
           const title = ' title="' + addr + (owners[i] ? ' · ' + esc(fieldLabel.get(owners[i])) : '') + '"';
-          cells += '<span class="' + cls + '"' + title + '>' + PE.bin.hex(now[i]) + '</span>';
+          cells += '<span class="' + cls + '" data-i="' + i + '"' + title + '>' + PE.bin.hex(now[i]) + '</span>';
         }
         html += '<div class="hex-row"><span class="hex-off">' + PE.bin.hex(start, 4) + '</span>' + cells + '</div>';
       }
@@ -157,8 +157,16 @@
         html += rowsHtml(now, src, 0, now.length);
       }
       host.innerHTML = html;
-      summary.textContent = changed + ' byte(s) differ from the opened file. Bright bytes belong to an editable field; dim bytes are unknown and preserved as they are.';
+      summary.textContent = changed + ' byte(s) differ from the opened file. Bright bytes belong to an editable field (double-click one to jump to it); dim bytes are unknown and preserved as they are.';
     }
+
+    host.addEventListener('dblclick', e => {
+      const cell = e.target.closest && e.target.closest('span[data-i]');
+      const id = cell && owners[Number(cell.dataset.i)];
+      if (!id) return;
+      if (root.getSelection) root.getSelection().removeAllRanges();
+      widgets.reveal(id);
+    });
 
     let queued = false;
     state.subscribe(() => {
@@ -175,7 +183,7 @@
       case 'form': return formBlock(state, widgets, block);
       case 'table': return tableBlock(state, widgets, block);
       case 'cards': return cardsBlock(state, widgets, block);
-      case 'hex': return hexBlock(state);
+      case 'hex': return hexBlock(state, widgets);
       default: throw new Error('Unknown block type ' + block.type);
     }
   }

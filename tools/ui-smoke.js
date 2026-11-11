@@ -183,6 +183,22 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert(/^0x[0-9A-F]{4} \(\d+\) · \S/.test(owned.title), owned.title);
   });
 
+  check('double-clicking a hex byte jumps to its field and opens collapsed cards', () => {
+    const state = PE.app.session.state;
+    const jump = id => {
+      const off = PE.codec.at(state.variant, PE.codec.index(state.def).get(id).offset);
+      const cell = d.querySelector('.hex-row span[data-i="' + off + '"]');
+      cell.dispatchEvent(new w.MouseEvent('dblclick', { bubbles: true }));
+    };
+    jump('pilot.rank');
+    assert.strictEqual(d.activeElement.getAttribute('aria-label'), 'Rank');
+    const card = d.querySelector('#card-tour2');
+    card.open = false;
+    jump('tour.2.status');
+    assert(card.open, 'card should open');
+    assert(card.contains(d.activeElement));
+  });
+
   check('Help lists the unmapped byte ranges of both games and opens with F1', () => {
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'F1', cancelable: true }));
     const x = $('helpRegionsXwing').textContent, t = $('helpRegionsTie').textContent;

@@ -175,7 +175,26 @@
       for (const g of globals) g();
     }
 
-    return { field, derived, refresh, onRefresh: fn => globals.push(fn), index };
+    // Opens any collapsed card and cleared filter around a field, scrolls to it and focuses it.
+    function reveal(id) {
+      const list = fieldWidgets.get(id);
+      if (!list) return false;
+      const el = list[0].el;
+      for (let n = el.parentElement; n; n = n.parentElement) if (n.tagName === 'DETAILS') n.open = true;
+      const row = el.closest('tr');
+      if (row && row.hidden) {
+        const search = row.closest('.block').querySelector('input.search');
+        if (search) { search.value = ''; search.dispatchEvent(new Event('input')); }
+      }
+      if (el.scrollIntoView) el.scrollIntoView({ block: 'center' });
+      const control = el.querySelector('input, select');
+      if (control) control.focus({ preventScroll: true });
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 1600);
+      return true;
+    }
+
+    return { field, derived, refresh, reveal, onRefresh: fn => globals.push(fn), index };
   }
 
   PE.ui.h = h;

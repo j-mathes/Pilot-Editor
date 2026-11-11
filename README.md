@@ -1,6 +1,6 @@
 # Pilot Editor
 
-**Version 1.2.2**
+**Version 1.3.0**
 
 A browser-based editor for X-Wing (`.plt`) and TIE Fighter (`.tfr`) pilot files. It runs entirely in your browser, so files stay on your computer.
 
@@ -57,6 +57,7 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International. See [LI
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.3.0 | 2026-11-10 | Help panel (Help button or F1) covering opening and saving, editing, notes for each game, shortcuts and the byte ranges no field maps to. Raw bytes view: tooltips start with the hex and decimal address, and double-clicking a mapped byte jumps to its field. |
 | 1.2.2 | 2026-11-10 | TIE Fighter: training hints now match pilots made in the 1994 and 1998 games (next level is the level picked at the start, the pilot file keeps the highest score and highest level completed, only seven craft exist). |
 | 1.2.1 | 2026-11-10 | X-Wing: training levels are no longer capped at 8, so pilots that flew past the eight main Proving Ground levels (level 9 and up) load and save unchanged. |
 | 1.2.0 | 2026-11-10 | X-Wing: fixes the last-operation marker for Tours 4 and 5 (it is a slot position, set from Operations completed, with a new editable Last completed slot and a warning when it does not match), rank-versus-points, medal-versus-tour and Kalidor Crescent checks, and titles for all five tours, their operations and the historical missions. TIE Fighter: mission titles and the craft flown, rank-versus-score warnings, Secret Order and goal hints, and two Top Ace presets. |
