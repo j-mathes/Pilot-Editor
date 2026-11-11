@@ -384,6 +384,39 @@ test('Compare: copying fields moves values exactly, in one undo step, without ga
   assert.strictEqual(d.get('tour.0.last'), e.get('tour.0.last'), 'ops and last slot travel together');
 });
 
+test('Compare: raw byte diff and byte copies update fields, keep unknown bytes, and undo in one step', () => {
+  const get = n => samples.find(s => s.name === n).bytes;
+  const a = PE.createState(PE.games.xwing, 'A', get('TOPACE.PLT'));
+  const b = PE.createState(PE.games.xwing, 'B', get('CALE.PLT'));
+  assert.strictEqual(a.length, b.length, 'same layout');
+  const diff = PE.compare.byteDiff(a, b);
+  assert(diff.count > 50 && diff.blocks.length > 5);
+  assert.strictEqual(diff.blocks.reduce((n, [s, e]) => n + e - s + 1, 0), diff.count);
+  assert(PE.compare.sameLayout(a, b));
+  const owners = PE.codec.owners(PE.games.xwing, a.length);
+  const mapped = diff.blocks.find(([s]) => owners[s]);
+  const loose = diff.blocks.find(([s, e]) => { for (let i = s; i <= e; i++) if (!owners[i]) return true; return false; });
+  assert(mapped && loose);
+  for (const [s, e] of diff.blocks) assert(PE.compare.copyBytes(a, b, s, e) || true);
+  assert.strictEqual(PE.compare.byteDiff(a, b).count, 0, 'copying every block makes the bytes equal');
+  assert.strictEqual(PE.compare.differences(a, b).length, 0, 'and the fields too');
+  assert(b.changes().some(c => /^raw:/.test(c.id)), 'unmapped byte edits are listed as changes');
+  b.revertAll();
+  assert.strictEqual(PE.compare.byteDiff(a, b).count, diff.count, 'revert all puts the original bytes back');
+  const c = PE.createState(PE.games.xwing, 'C', get('CALE.PLT'));
+  PE.compare.copyBytes(a, c, mapped[0], mapped[1]);
+  c.undo();
+  assert.strictEqual(PE.compare.byteDiff(a, c).count, diff.count, 'one undo reverts a byte copy');
+  const saved = c.toBytes({ mirror: true });
+  const t1 = PE.createState(PE.games.tie, 'T1', get('TOPACE10.TFR'));
+  const t2 = PE.createState(PE.games.tie, 'T2', get('RUSTY-1.TFR'));
+  assert.strictEqual(t1.activeLength(), 1928);
+  assert.strictEqual(PE.compare.byteDiff(t1, t2).length, 1928, 'only the pilot half of a two-half file is compared');
+  assert(saved.length === c.length);
+  const rookie = PE.createState(PE.games.xwing, 'R', get('ROOKIE.PLT'));
+  assert.strictEqual(PE.compare.sameLayout(a, rookie), a.length === rookie.length, 'the 1706-byte layout is not aligned with the 1705-byte one');
+});
+
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
   const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE)/i.test(s.name) && s.name !== 'CALE.PLT');
   assert(roster.length >= 30, 'roster files missing: ' + roster.length);

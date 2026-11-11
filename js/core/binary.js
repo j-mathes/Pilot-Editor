@@ -50,5 +50,14 @@
     return n.toString(16).toUpperCase().padStart(width || 2, '0');
   }
 
-  PE.bin = { TYPES, read, write, hex };
+  // Reads a byte offset typed as hex (0x2E1, $2E1, 2E1) or decimal (737); NaN if it is neither.
+  function parseOffset(text) {
+    const t = String(text).trim();
+    if (/^(0x|\$)[0-9a-f]+$/i.test(t)) return parseInt(t.replace(/^(0x|\$)/i, ''), 16);
+    if (/^\d+$/.test(t)) return parseInt(t, 10);
+    if (/^[0-9a-f]+$/i.test(t)) return parseInt(t, 16);
+    return NaN;
+  }
+
+  PE.bin = { TYPES, read, write, hex, parseOffset };
 })(globalThis);

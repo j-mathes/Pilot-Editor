@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pilot Editor</title>
   <meta name="application-name" content="Pilot Editor">
-  <meta name="version" content="1.4.0">
+  <meta name="version" content="1.5.0">
   <link rel="canonical" href="https://j-mathes.github.io/Pilot-Editor/">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -112,7 +112,7 @@
   </div>
 
   <footer class="site-footer">
-    <span id="appVersion">Pilot Editor v1.4.0</span>
+    <span id="appVersion">Pilot Editor v1.5.0</span>
     <a href="https://j-mathes.github.io/Pilot-Editor/" target="_blank" rel="noopener" title="The hosted version of this editor on GitHub Pages">GitHub Pages</a>
     <a href="https://github.com/j-mathes/Pilot-Editor" target="_blank" rel="noopener" title="Source code, README and version history">Source on GitHub</a>
     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener" title="Creative Commons Attribution-NonCommercial-ShareAlike 4.0">CC BY-NC-SA 4.0</a>
@@ -144,9 +144,9 @@
 
       <h3>Editing</h3>
       <ul>
-        <li>Use the list on the left to jump between sections. Fields that differ from the opened file are highlighted.</li>
+        <li>Use the list on the left to jump between sections. Fields that differ from the opened file are highlighted. Tours and battles are cards you can expand or collapse, each with a status badge and a progress bar; the kill tables have a filter box.</li>
         <li><strong>Undo</strong> (Ctrl+Z) and <strong>Redo</strong> (Ctrl+Y) cover every edit, bulk action and preset.</li>
-        <li><strong>Changes</strong> lists every changed field with its old and new value, a Revert button for each, and Revert all. It also lists warnings.</li>
+        <li><strong>Changes</strong> lists every changed field with its old and new value, a Revert button for each, and Revert all. It also lists warnings, and bytes changed by hand in Compare as unmapped bytes. The two numbers on the Changes button count changes and warnings.</li>
         <li><strong>Warnings</strong> are advice, for example a rank that does not match the score. They never block saving.</li>
         <li>Number fields stay within the range the file can hold; hover a field for its range and notes. A value already outside the usual range in an opened file is kept and flagged, not changed.</li>
         <li><strong>Enforce rules</strong> (off by default) keeps related values consistent with the game's rules as you edit, and a message lists what it changed; Undo reverts it together with your edit. It does not change values that already break a rule when a file is opened. Rules it cannot enforce stay as warnings: the number on the Changes button, a ! beside the field and the Warnings list; after an enforced edit the message repeats any that still apply to the fields involved.
@@ -157,16 +157,19 @@
           </ul>
         </li>
         <li><strong>Presets</strong> apply a Top Ace pilot or reset every field to a new pilot. Bulk buttons (Mark all complete, Clear scores and so on) change many fields at once and can be undone. Scores are only changed by the buttons that say so.</li>
-        <li>Calculated values shown beside editable ones, such as hit percentages and battle totals, are for reference.</li>
-        <li><strong>Raw bytes</strong> shows the file bytes. Bright bytes belong to an editable field (double-click one to jump to that field); dim bytes are unknown and kept as they are. Hover a byte for its address in hex and decimal.</li>
+        <li>Calculated values shown beside editable ones, such as hit percentages and battle totals, are for reference. Two have a Sync button that stores the calculated value: TIE Fighter total kills (the sum by type) and the X-Wing Kalidor Crescent (the level the scores qualify for).</li>
+        <li><strong>Raw bytes</strong> shows the file bytes with an ASCII column and a frozen header of offsets 00 to 0F. Bright bytes belong to an editable field (double-click one to jump to that field); dim bytes are unknown and kept as they are; bytes that differ from the opened file are marked. Click a byte (or its ASCII character) to select it, shift-click or drag for a range, or use the arrow keys (shift extends, Esc clears); the offset, field and value show above the bytes. <strong>Go to offset</strong> takes hex (0x2E1) or decimal. Hover a byte for its address in hex and decimal.</li>
         <li>The name box sets the file name; the games use it as the pilot name.</li>
+        <li><strong>Theme</strong> switches between light and dark and is remembered in this browser.</li>
       </ul>
 
       <h3>Comparing two pilots</h3>
       <ul>
         <li><strong>Compare</strong> asks for a second file of the same game and shows the two pilots side by side, with the open pilot on the left. Only the fields that differ are listed, grouped like the sections; untick Differences only to see every field, or type in the filter to narrow the list.</li>
         <li>The arrows between the values copy a field to the left or right file. The arrows on a group heading copy that group's shown differences, and the <em>all</em> buttons in the table header copy every shown difference. Related fields travel together (operations completed and last completed slot).</li>
-        <li>Copies set values exactly as they are in the other file; Enforce rules is not applied. Unknown bytes are not compared or copied.</li>
+        <li>Copies set values exactly as they are in the other file; Enforce rules is not applied.</li>
+        <li><strong>Raw bytes</strong> at the bottom of the comparison shows both files byte by byte with an ASCII column; differing bytes are highlighted. The title, tools and column header (file names and 00 to 0F offsets) stay in view while you scroll. <strong>Previous</strong> and <strong>Next</strong> (or P and N in the grid) select the next block of differing bytes, <strong>Go to offset</strong> takes hex (0x2E1) or decimal, and <em>Rows with differences only</em> hides identical rows. Click a byte, shift-click or drag to select a range (arrow keys move, shift extends); hover a byte for its offset, field and both values, and double-click a byte that belongs to a field to jump to it in the table.</li>
+        <li><strong>Copy bytes</strong> writes the selected bytes from one file into the other, including unknown bytes; bytes that belong to a field update that field. It is one Undo step. Only each file's pilot part is compared (the backup half of a two-half file is rewritten when you save). Files with different layouts (the 1706-byte original X-Wing against the 1705-byte Collector's file) are compared by offset, so differences after the shift are expected and byte copies are turned off; use the field table for those.</li>
         <li>Undo and Redo step back through the copies, whichever side they changed. Save writes a side, and each side has its own Save button. <strong>Done</strong> returns to editing; it asks first if the other file has unsaved changes.</li>
         <li>Opening files is switched off while comparing.</li>
       </ul>
@@ -185,7 +188,7 @@
       </ul>
 
       <h3>Unknown bytes are kept</h3>
-      <p>Only mapped fields are written. Every other byte is kept exactly as it was opened, so saving cannot damage data the editor does not understand. These are the byte ranges no field maps to, read from the field tables.</p>
+      <p>Only mapped fields are written. Every other byte is kept exactly as it was opened, so saving cannot damage data the editor does not understand. The one exception is when you copy bytes in Compare, which can change unknown bytes on purpose. These are the byte ranges no field maps to, read from the field tables.</p>
       <h4>X-Wing (1705-byte layout)</h4>
       <ul id="helpRegionsXwing"></ul>
       <h4>TIE Fighter (active half, bytes 0 to 1927)</h4>
@@ -195,6 +198,7 @@
       <h3>Shortcuts</h3>
       <ul>
         <li>Ctrl+O open, Ctrl+S save, Ctrl+Shift+S save as, Ctrl+Z undo, Ctrl+Y redo, F1 help, Esc closes this window.</li>
+        <li>In the raw bytes grids: click or the arrow keys select and shift extends; Esc clears the selection in the normal view. In Compare, N and P jump to the next and previous difference. Ctrl+O is switched off while comparing, and Ctrl+S saves the left file.</li>
       </ul>
     </div>
   </dialog>

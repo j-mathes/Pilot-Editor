@@ -176,7 +176,7 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
 
   check('hex byte tooltips start with the hex and decimal address', () => {
     PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
-    const cells = d.querySelectorAll('.hex-row span:not(.hex-off)');
+    const cells = d.querySelectorAll('.hex-row span[data-i]');
     assert(/^0x0000 \(0\)/.test(cells[0].title), cells[0].title);
     assert(/^0x00FF \(255\)/.test(cells[255].title), cells[255].title);
     const owned = d.querySelector('.hex-row span.k');
@@ -280,6 +280,134 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     PE.app.exitCompare();
     assert(!d.body.classList.contains('diff-mode') && $('diff').hidden && !$('editor').hidden && !$('sidebar').hidden);
     assert.strictEqual(PE.app.session.state, left);
+  });
+
+  check('Compare raw bytes: summary, navigation, selection, byte copy both ways, go to offset, layout note', () => {
+    w.confirm = () => true;
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    PE.app.compareWith('CALE.PLT', read('reference/X-Wing/Pilot Files/CALE.PLT'), null);
+    const left = PE.app.session.state;
+    const hx = d.querySelector('#diff .hx');
+    assert(hx && hx.querySelector('.hx-top .hx-title') && hx.querySelector('.hx-top .hx-bar') && hx.querySelector('.hx-top .hx-head'), 'title, tools and column header are all in the frozen block');
+    const head = d.querySelector('#diff .hx-head');
+    assert.deepStrictEqual([...head.querySelectorAll('.hx-name')].map(e => e.textContent), ['TOPACE.plt', 'CALE.plt'], 'file names head their columns');
+    assert.strictEqual(head.querySelectorAll('.hx-pane.hx-lab > span').length, 32, 'both files get 00 to 0F offset labels');
+    assert.strictEqual(head.querySelectorAll('.hx-ascii.hx-lab > span').length, 32);
+    assert([...d.querySelectorAll('#diff .hx-rows .hx-row')].every(r => [...r.children].filter(c => /hx-pane|hx-ascii/.test(c.className)).every(c => c.children.length === 16)), 'the last row is padded so the columns line up');
+    assert(hx.previousElementSibling.classList.contains('diff-wrap'), 'it sits below the field table');
+    assert(d.querySelector('#diff .hx-note').hidden, 'same layout, same size: no layout note');
+    const sum = () => d.querySelector('.hx-sum').textContent;
+    const total = Number(/^(\d+) bytes? differ/.exec(sum())[1]);
+    assert(total > 50 && d.querySelectorAll('.hx .hl > .b.d').length === total, sum());
+    assert(d.querySelectorAll('.hx .hl > .b').length === left.activeLength(), 'every byte of the pilot is drawn');
+
+    const btn = text => [...d.querySelectorAll('.hx-bar button')].find(b => b.textContent.includes(text));
+    assert(btn('Copy bytes \u25B6').disabled && btn('Clear').disabled, 'nothing selected yet');
+    btn('Next').click();
+    const selected = () => [...d.querySelectorAll('.hx .hl > .b.s')].map(e => Number(e.dataset.i));
+    const first = selected();
+    assert(first.length >= 1 && /block 1/.test(sum()), sum());
+    const asciiOn = side => d.querySelectorAll('#diff .hx .' + side + ' > .a.s').length;
+    assert(asciiOn('al') === first.length && asciiOn('ar') === first.length, 'the ASCII characters of the selected bytes are highlighted on both sides');
+    assert(!btn('Copy bytes \u25B6').disabled);
+    btn('Next').click();
+    assert(selected()[0] > first[first.length - 1], 'next moves to a later block');
+    btn('Previous').click();
+    assert.deepStrictEqual(selected(), first, 'previous goes back');
+
+    btn('\u25C0 Copy bytes').click();
+    const after = PE.app.session.state.toBytes();
+    const right = d.querySelector('.hx .hr > .b[data-i="' + first[0] + '"]').textContent;
+    assert.strictEqual(PE.bin.hex(after[first[0]]), right, 'the left file now holds the right file\'s byte');
+    assert(/unsaved/.test(d.querySelector('.diff-left .diff-dirty').textContent) && !d.querySelector('.diff-left .diff-dirty').hidden);
+    assert($('btnUndo').disabled === false);
+    $('btnUndo').click();
+    assert(!d.querySelector('.diff-left .diff-dirty') || d.querySelector('.diff-left .diff-dirty').hidden, 'undo reverts the byte copy');
+    assert.strictEqual(Number(/^(\d+) bytes? differ/.exec(sum())[1]), total);
+
+    const go = d.querySelector('#diff .hx-go');
+    go.value = '0x2E1';
+    go.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter' }));
+    assert.deepStrictEqual(selected(), [737]);
+    assert(/0x02E1 \(737\)/.test(d.querySelector('.hx-sel').textContent), d.querySelector('.hx-sel').textContent);
+    go.value = '99999';
+    go.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter' }));
+    assert(/between 0 and/.test(d.querySelector('.hx-sel').textContent));
+
+    const only = d.querySelector('.hx-bar input[type=checkbox]');
+    only.checked = true;
+    only.dispatchEvent(new w.Event('change'));
+    assert(d.querySelectorAll('.hx .hx-gap').length > 0 && d.querySelectorAll('.hx .hl > .b').length < left.activeLength());
+    only.checked = false;
+    only.dispatchEvent(new w.Event('change'));
+
+    const cell = d.querySelector('.hx .hl > .b[data-i="737"]');
+    cell.dispatchEvent(new w.MouseEvent('mousedown', { bubbles: true, button: 0 }));
+    cell.dispatchEvent(new w.MouseEvent('mouseover', { bubbles: true }));
+    assert(/Tour \d status/.test(cell.title), cell.title);
+    d.dispatchEvent(new w.MouseEvent('mouseup'));
+    PE.app.exitCompare();
+
+    PE.app.compareWith('ROOKIE.PLT', read('reference/X-Wing/ROOKIE.PLT'), null);
+    const note = d.querySelector('#diff .hx-note');
+    assert(!note.hidden && /different layouts/.test(note.textContent) && /cannot be copied/.test(note.textContent), note.textContent);
+    btn('Next').click();
+    assert(btn('\u25C0 Copy bytes').disabled && btn('Copy bytes \u25B6').disabled, 'byte copy is off across layouts');
+    PE.app.exitCompare();
+  });
+
+  check('Raw bytes view shows ASCII and has Go to offset', () => {
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    const rows = d.querySelectorAll('#sections .hex-row');
+    assert(rows.length > 100 && [...rows].every(r => r.querySelector('.hex-ascii')));
+    const full = () => [...d.querySelectorAll('#sections .hex-row')].every(r => r.querySelector('.hex-pane').children.length === 16 && r.querySelector('.hex-ascii').children.length === 16);
+    assert(full(), 'the last X-Wing row is padded to 16 cells so the columns line up');
+    PE.app.loadBytes('TOPACE10.TFR', read('reference/TIE-Fighter/TOPACE10.TFR'), null);
+    assert(full(), 'and so are the partial rows of the TIE Fighter file');
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    assert.deepStrictEqual([...d.querySelectorAll('#sections .hex-head .hex-pane > span')].map(e => e.textContent), Array.from({ length: 16 }, (_, i) => i.toString(16).toUpperCase().padStart(2, '0')), 'the frozen header labels the byte columns 00 to 0F');
+    const firstChars = rows[0].querySelector('.hex-ascii').children;
+    assert.strictEqual(firstChars.length, 16);
+    const go = d.querySelector('#sections .hx-go');
+    go.value = '0x2E1';
+    go.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter' }));
+    const hit = d.querySelector('#sections .hex-pane > span.s');
+    assert(hit && hit.dataset.i === '737', 'the byte is selected');
+    assert(/0x02E1 \(737\) \u00B7 .* \u00B7 value [0-9A-F]{2} \(\d+\)/.test(d.querySelector('#sections .hex-bar .hint').textContent), d.querySelector('#sections .hex-bar .hint').textContent);
+    go.value = 'zz';
+    go.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter' }));
+    assert(/Offset must be between 0 and 1705/.test(d.querySelector('#sections .hex-bar .hint').textContent));
+    assert.strictEqual(PE.bin.parseOffset('0x10') + PE.bin.parseOffset('16') + PE.bin.parseOffset('$10') + PE.bin.parseOffset('1A'), 16 * 3 + 26);
+    assert(Number.isNaN(PE.bin.parseOffset('hello')));
+
+    const selected = () => [...d.querySelectorAll('#sections .hex-pane > span.s')].map(e => Number(e.dataset.i));
+    const cell = i => d.querySelector('#sections .hex-pane > span[data-i="' + i + '"]');
+    const press = (el, type, opts) => el.dispatchEvent(new w.MouseEvent(type, Object.assign({ bubbles: true, button: 0 }, opts)));
+    press(cell(20), 'mousedown');
+    assert.deepStrictEqual(selected(), [20], 'click selects one byte');
+    assert.deepStrictEqual([...d.querySelectorAll('#sections .hex-ascii > span.s')].map(e => e.dataset.a), ['20'], 'its ASCII character is highlighted too');
+    press(d.querySelector('#sections .hex-ascii > span[data-a="25"]'), 'mousedown');
+    assert.deepStrictEqual(selected(), [25], 'clicking an ASCII character selects its byte');
+    press(cell(20), 'mousedown');
+    press(cell(24), 'mousedown', { shiftKey: true });
+    assert.deepStrictEqual(selected(), [20, 21, 22, 23, 24], 'shift-click extends to a range');
+    assert(/0x0014\u20130x0018 \(5 bytes\)/.test(d.querySelector('#sections .hex-bar .hint').textContent), d.querySelector('#sections .hex-bar .hint').textContent);
+    press(cell(30), 'mousedown');
+    press(cell(33), 'mouseover');
+    press(cell(33), 'mouseup');
+    assert.deepStrictEqual(selected(), [30, 31, 32, 33], 'dragging selects a range');
+    const grid = d.querySelector('#sections .hex');
+    grid.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    assert.deepStrictEqual(selected(), [34], 'arrow keys move the selection');
+    grid.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, shiftKey: true }));
+    assert.strictEqual(selected().length, 17, 'shift-arrow extends it');
+    grid.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.deepStrictEqual(selected(), [], 'Escape clears it');
+  });
+
+  check('Help covers the main features', () => {
+    const text = $('helpDialog').textContent;
+    for (const term of ['Compare', 'Enforce rules', 'Go to offset', 'Theme', 'Sync', 'Restore', 'Copy bytes', 'Presets', 'Shortcuts', 'Unknown bytes are kept']) assert(text.includes(term), 'Help is missing: ' + term);
   });
 
   check('Help lists the unmapped byte ranges of both games and opens with F1', () => {

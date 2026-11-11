@@ -78,5 +78,37 @@
     return to.assign(values);
   }
 
-  PE.compare = { groups, rows, differences, copy };
+  // The bytes both files would save, compared offset by offset over each file's pilot part (a backup half is ignored).
+  function byteDiff(left, right) {
+    const a = left.toBytes();
+    const b = right.toBytes();
+    const la = left.activeLength();
+    const lb = right.activeLength();
+    const length = Math.max(la, lb);
+    const flags = new Uint8Array(length);
+    const blocks = [];
+    let count = 0;
+    for (let i = 0; i < length; i++) {
+      if (i < la && i < lb && a[i] === b[i]) continue;
+      flags[i] = 1;
+      count++;
+      const last = blocks[blocks.length - 1];
+      if (last && last[1] === i - 1) last[1] = i; else blocks.push([i, i]);
+    }
+    return { a, b, la, lb, length, flags, blocks, count };
+  }
+
+  // Byte copies line up only when both files use the same layout (the 1706-byte X-Wing file is shifted from byte 735).
+  function sameLayout(left, right) {
+    return (left.variant.shift || 0) === (right.variant.shift || 0);
+  }
+
+  // Copies bytes start..end (inclusive) as they are; returns true if anything changed.
+  function copyBytes(from, to, start, end) {
+    const stop = Math.min(end + 1, from.activeLength());
+    if (stop <= start) return false;
+    return to.patchBytes(start, from.toBytes().subarray(start, stop));
+  }
+
+  PE.compare = { groups, rows, differences, copy, byteDiff, sameLayout, copyBytes };
 })(globalThis);

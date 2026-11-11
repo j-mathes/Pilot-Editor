@@ -127,19 +127,77 @@
     const host = h('div', { class: 'hex', tabindex: 0, role: 'region', 'aria-label': 'Raw file bytes' });
     const summary = h('p', { class: 'hint' });
     const half = state.variant.half;
+    let sel = null; // { a, b } selected byte offsets
+    let marked = [];
+    let cells = [];
+    let chars = [];
+    let bytes = null; // bytes as currently shown
+    let dragging = false;
+
+    const ascii = v => (v >= 32 && v <= 126 ? esc(String.fromCharCode(v)) : '.');
+    const status = h('span', { class: 'hint', role: 'status' });
+    const goInput = h('input', {
+      type: 'text', class: 'hx-go', placeholder: 'Go to offset', 'aria-label': 'Go to offset', autocomplete: 'off',
+      title: 'Type a byte offset in hex (0x2E1) or decimal (737) and press Enter',
+      onkeydown: e => { if (e.key === 'Enter') go(goInput.value); }
+    });
+
+    const range = () => (sel ? [Math.min(sel.a, sel.b), Math.max(sel.a, sel.b)] : null);
+    const hex4 = n => '0x' + PE.bin.hex(n, 4);
+
+    function paint() {
+      for (const el of marked) el.classList.remove('s');
+      marked = [];
+      const r = range();
+      if (!r) { status.textContent = 'Click a byte to select it; shift-click or drag selects a range.'; return; }
+      for (let i = r[0]; i <= r[1]; i++) {
+        for (const el of [cells[i], chars[i]]) if (el) { el.classList.add('s'); marked.push(el); }
+      }
+      const n = r[1] - r[0] + 1;
+      status.textContent = n === 1
+        ? hex4(r[0]) + ' (' + r[0] + ')' + (owners[r[0]] ? ' \u00B7 ' + fieldLabel.get(owners[r[0]]) : ' \u00B7 unknown byte') + (bytes ? ' \u00B7 value ' + PE.bin.hex(bytes[r[0]]) + ' (' + bytes[r[0]] + ')' : '')
+        : hex4(r[0]) + '\u2013' + hex4(r[1]) + ' (' + n + ' bytes)';
+    }
+
+    function scrollTo(i, block) {
+      if (cells[i] && cells[i].scrollIntoView) cells[i].scrollIntoView({ block: block || 'nearest' });
+    }
+
+    function go(text) {
+      const n = PE.bin.parseOffset(text);
+      if (!Number.isFinite(n) || n < 0 || n >= state.length) {
+        status.textContent = 'Offset must be between 0 and ' + (state.length - 1) + ' (hex like 0x2E1, or decimal).';
+        return;
+      }
+      sel = { a: n, b: n };
+      paint();
+      scrollTo(n, 'center');
+    }
+
+    // The column labels sit above the scrolling bytes, not inside them, so nothing can show through behind them.
+    const head = h('div', { class: 'hex-head' }, h('span', null, 'Offset'));
+    const labelRow = (cls, items) => { const el = h('span', { class: cls }); el.innerHTML = items.map(t => '<span>' + t + '</span>').join(''); return el; };
+    head.append(labelRow('hex-pane', Array.from({ length: 16 }, (_, i) => PE.bin.hex(i))), labelRow('hex-ascii', Array.from({ length: 16 }, (_, i) => i.toString(16).toUpperCase())));
 
     function rowsHtml(now, src, from, to) {
       let html = '';
       for (let start = from; start < to; start += 16) {
         const end = Math.min(start + 16, to);
         let cells = '';
+        let chars = '';
         for (let i = start; i < end; i++) {
-          const cls = (owners[i] ? 'k' : 'u') + (now[i] !== src[i] ? ' c' : '');
+          const changed = now[i] !== src[i];
+          const cls = (owners[i] ? 'k' : 'u') + (changed ? ' c' : '');
           const addr = '0x' + PE.bin.hex(i, 4) + ' (' + i + ')';
           const title = ' title="' + addr + (owners[i] ? ' · ' + esc(fieldLabel.get(owners[i])) : '') + '"';
           cells += '<span class="' + cls + '" data-i="' + i + '"' + title + '>' + PE.bin.hex(now[i]) + '</span>';
+          chars += '<span data-a="' + i + '"' + (changed ? ' class="c"' : '') + '>' + ascii(now[i]) + '</span>';
         }
-        html += '<div class="hex-row"><span class="hex-off">' + PE.bin.hex(start, 4) + '</span>' + cells + '</div>';
+        for (let i = end; i < start + 16; i++) {
+          cells += '<span class="pad"></span>';
+          chars += '<span></span>';
+        }
+        html += '<div class="hex-row"><span class="hex-off">' + PE.bin.hex(start, 4) + '</span><span class="hex-pane">' + cells + '</span><span class="hex-ascii">' + chars + '</span></div>';
       }
       return html;
     }
@@ -147,6 +205,7 @@
     function render() {
       const now = state.toBytes();
       const src = state.sourceBytes();
+      bytes = now;
       let changed = 0;
       for (let i = 0; i < now.length; i++) if (now[i] !== src[i]) changed++;
       let html = '';
@@ -157,15 +216,53 @@
         html += rowsHtml(now, src, 0, now.length);
       }
       host.innerHTML = html;
+      cells = [];
+      chars = [];
+      for (const el of host.querySelectorAll('.hex-pane > span[data-i]')) cells[Number(el.dataset.i)] = el;
+      for (const el of host.querySelectorAll('.hex-ascii > span[data-a]')) chars[Number(el.dataset.a)] = el;
+      marked = [];
+      if (sel && (sel.a >= now.length || sel.b >= now.length)) sel = null;
+      paint();
       summary.textContent = changed + ' byte(s) differ from the opened file. Bright bytes belong to an editable field (double-click one to jump to it); dim bytes are unknown and preserved as they are.';
     }
 
     host.addEventListener('dblclick', e => {
-      const cell = e.target.closest && e.target.closest('span[data-i]');
-      const id = cell && owners[Number(cell.dataset.i)];
+      const cell = e.target.closest && e.target.closest('span[data-i], span[data-a]');
+      const id = cell && owners[Number(cell.dataset.i !== undefined ? cell.dataset.i : cell.dataset.a)];
       if (!id) return;
       if (root.getSelection) root.getSelection().removeAllRanges();
       widgets.reveal(id);
+    });
+
+    const byteOf = e => {
+      const el = e.target.closest && e.target.closest('.hex-pane > span[data-i], .hex-ascii > span[data-a]');
+      return el ? Number(el.dataset.i !== undefined ? el.dataset.i : el.dataset.a) : null;
+    };
+    host.addEventListener('mousedown', e => {
+      const i = byteOf(e);
+      if (i === null || e.button !== 0) return;
+      if (e.shiftKey && sel) sel.b = i; else sel = { a: i, b: i };
+      dragging = true;
+      e.preventDefault();
+      host.focus({ preventScroll: true });
+      paint();
+    });
+    host.addEventListener('mouseover', e => {
+      const i = byteOf(e);
+      if (i !== null && dragging && sel) { sel.b = i; paint(); }
+    });
+    host.addEventListener('mouseup', () => { dragging = false; });
+    host.addEventListener('mouseleave', () => { dragging = false; });
+    host.addEventListener('keydown', e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Escape') { sel = null; paint(); return; }
+      const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -16, ArrowDown: 16 }[e.key];
+      if (step === undefined) return;
+      e.preventDefault();
+      const next = Math.max(0, Math.min(state.length - 1, (sel ? sel.b : 0) + step));
+      if (e.shiftKey && sel) sel.b = next; else sel = { a: next, b: next };
+      paint();
+      scrollTo(next);
     });
 
     let queued = false;
@@ -175,7 +272,7 @@
       requestAnimationFrame(() => { queued = false; render(); });
     });
     render();
-    return h('div', { class: 'block' }, summary, host);
+    return h('div', { class: 'block' }, summary, h('div', { class: 'hex-bar' }, goInput, status), h('div', { class: 'hex-box' }, head, host));
   }
 
   function renderBlock(state, widgets, block) {

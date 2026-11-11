@@ -21,6 +21,8 @@
     let enforce = false;
     let ruleDepth = 0;
     let adjusted = null; // rule-made edits of the current top-level set, for the user message
+    const rawKeys = new Set(); // 'raw:<offset>' ids for unmapped bytes changed by hand (compare view)
+    let ownersMap = null;
 
     const state = { def, variant, name, get length() { return sourceBytes.length; } };
 
@@ -193,6 +195,13 @@
       for (const f of def.fields) {
         if (values[f.id] !== baseline[f.id]) out.push({ id: f.id, field: f, from: baseline[f.id], to: values[f.id] });
       }
+      for (const key of rawKeys) {
+        const offset = Number(key.slice(4));
+        const from = baseline[key] !== undefined ? baseline[key] : sourceBytes[offset];
+        if (values[key] !== undefined && values[key] !== from) {
+          out.push({ id: key, field: { id: key, label: 'Unmapped byte ' + offset + ' (0x' + PE.bin.hex(offset, 4) + ')' }, from, to: values[key] });
+        }
+      }
       return out;
     };
 
@@ -201,11 +210,52 @@
     };
 
     state.revertAll = function () {
-      batch(() => { for (const f of def.fields) setRaw(f.id, baseline[f.id]); });
+      batch(() => {
+        for (const f of def.fields) setRaw(f.id, baseline[f.id]);
+        for (const key of rawKeys) setRaw(key, baseline[key]);
+      });
     };
 
+    function withOverlay(src) {
+      if (!rawKeys.size) return src;
+      const out = new Uint8Array(src);
+      for (const key of rawKeys) if (values[key] !== undefined) out[Number(key.slice(4))] = values[key];
+      return out;
+    }
+
     state.toBytes = function (opts) {
-      return codec.serialize(def, values, sourceBytes, opts);
+      return codec.serialize(def, values, withOverlay(sourceBytes), opts);
+    };
+
+    // Number of bytes that are the pilot itself; the rest of a two-half file is a backup rewritten on save.
+    state.activeLength = () => variant.half || sourceBytes.length;
+
+    // Writes raw bytes at an offset as one undo step: bytes that belong to a field set that field, the rest are kept as they are.
+    state.patchBytes = function (offset, data) {
+      if (!ownersMap) ownersMap = codec.owners(def, sourceBytes.length);
+      const limit = state.activeLength();
+      const cur = state.toBytes();
+      const next = new Uint8Array(cur);
+      const fields = new Set();
+      const loose = [];
+      for (let k = 0; k < data.length; k++) {
+        const i = offset + k;
+        if (i < 0 || i >= limit) continue;
+        next[i] = data[k];
+        if (ownersMap[i]) fields.add(ownersMap[i]); else loose.push(i);
+      }
+      let changed = false;
+      batch(() => {
+        for (const id of fields) {
+          if (setRaw(id, codec.readField(index.get(id), next, variant))) changed = true;
+        }
+        for (const i of loose) {
+          if (cur[i] === next[i]) continue;
+          rawKeys.add('raw:' + i);
+          if (setRaw('raw:' + i, next[i])) changed = true;
+        }
+      });
+      return changed;
     };
 
     state.markSaved = function (savedBytes) {
