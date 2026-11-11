@@ -355,8 +355,8 @@
 
   function blank() {
     const b = new Uint8Array(1705);
+    // 0xFF means "no operation completed yet" for each tour, as in ROOKIE.PLT.
     b.fill(255, 743, 751);
-    b[134] = 1;
     return b;
   }
 

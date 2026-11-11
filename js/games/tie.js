@@ -80,8 +80,10 @@
   SHIPS.forEach((name, i) => {
     fields.push(num('training.' + i + '.next', 'u8', 29 + i, name + ' next training level', { softMax: 21, hint: 'The next training level offered for this craft.' }));
     fields.push(num('training.' + i + '.score', 'u32', 42 + 4 * i, name + ' training score', { max: MAX_SCORE }));
-    fields.push(num('training.' + i + '.done', 'u8', 90 + i, name + ' training level completed', {
-      softMax: 20, hint: 'Training status for this craft. Seen in files: 2 = not completed, 4 = certificate.', valueLabels: { 2: 'Not completed', 4: 'Certificate' }
+    fields.push(num('training.' + i + '.done', 'u8', 90 + i, name + ' total training levels completed', {
+      softMax: 20,
+      hint: 'The 1995 magazine table calls this "Total Training Levels Completed", but game files hold 0, 2, 4 and 6, so it is not a plain count. The labels 2 = not completed and 4 = certificate come from the owner\'s own notes and are unverified; 6 is seen with no known meaning.',
+      valueLabels: { 2: 'Not completed (unverified)', 4: 'Certificate (unverified)' }
     }));
   });
 
@@ -181,7 +183,7 @@
     {
       id: 'training', title: 'Training',
       blocks: [{
-        type: 'table', title: 'Training simulator', columns: ['Next level', 'Best score', 'Level completed'],
+        type: 'table', title: 'Training simulator', columns: ['Next level', 'Best score', 'Total levels completed'],
         rows: SHIPS.map((name, i) => ({ label: name, cells: ['training.' + i + '.next', 'training.' + i + '.score', 'training.' + i + '.done'] }))
       }]
     },

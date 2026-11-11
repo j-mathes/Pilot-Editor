@@ -195,6 +195,12 @@ test('NOKSP.PLT: a real save with Tours 4 and 5 played', () => {
   assert(load('RUSTY1.PLT').warningsFor('tour.4.last').length === 1);
 });
 
+test('X-Wing: a new pilot has no training levels completed', () => {
+  const st = PE.createState(PE.games.xwing, 'NEW', PE.games.xwing.blank());
+  for (let i = 0; i < 4; i++) assert.strictEqual(st.get('training.' + i + '.level'), 0);
+  assert(!st.isDirty());
+});
+
 test('RUSTY.PLT (3410 bytes)', () => {
   const st = load('RUSTY.PLT');
   assert.strictEqual(st.get('tour.0.status'), 1);
