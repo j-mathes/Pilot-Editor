@@ -6,7 +6,7 @@ const assert = require('assert');
 
 const root = path.join(__dirname, '..');
 const ctx = vm.createContext({ console });
-for (const f of ['js/core/binary.js', 'js/core/codec.js', 'js/core/state.js', 'js/core/rules.js', 'js/core/files.js', 'js/games/xwing.js', 'js/games/tie.js']) {
+for (const f of ['js/core/binary.js', 'js/core/codec.js', 'js/core/state.js', 'js/core/rules.js', 'js/core/compare.js', 'js/core/files.js', 'js/games/xwing.js', 'js/games/tie.js']) {
   vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 }
 const PE = vm.runInContext('PilotEditor', ctx);
@@ -341,6 +341,47 @@ test('Enforce rules: Kalidor Crescent follows the operation scores; game-made pi
   assert.strictEqual(x.get('medal.kalidor'), 2);
   x.set('tour.0.op.0', 0);
   assert.strictEqual(x.get('medal.kalidor'), 2, 'cleared scores do not take the medal away');
+});
+
+test('Compare: every field is in exactly one group, for both games', () => {
+  for (const def of [PE.games.xwing, PE.games.tie]) {
+    const ids = PE.compare.groups(def).flatMap(g => g.ids);
+    assert.strictEqual(ids.length, def.fields.length, def.id);
+    assert.strictEqual(new Set(ids).size, ids.length, def.id + ' has duplicates');
+    const other = PE.compare.groups(def).find(g => g.title === 'Other');
+    assert(!other, def.id + ' fields missing from the sections: ' + (other && other.ids.slice(0, 5)));
+  }
+});
+
+test('Compare: copying fields moves values exactly, in one undo step, without game rules', () => {
+  const get = n => samples.find(s => s.name === n).bytes;
+  const a = PE.createState(PE.games.xwing, 'A', get('TOPACE.PLT'));
+  const b = PE.createState(PE.games.xwing, 'B', get('ROOKIE.PLT'));
+  const diffs = PE.compare.differences(a, b);
+  assert(diffs.length > 20, 'the two pilots differ');
+  assert.strictEqual(PE.compare.differences(a, a).length, 0);
+  b.setEnforce(true);
+  assert(PE.compare.copy(a, b, diffs.map(r => r.id)));
+  assert.strictEqual(PE.compare.differences(a, b).length, 0, 'every difference copied');
+  assert.strictEqual(b.warnings().length, a.warnings().length);
+  b.undo();
+  assert.strictEqual(PE.compare.differences(a, b).length, diffs.length, 'one undo reverts the whole copy');
+  assert.strictEqual(a.canUndo(), false, 'the source is untouched');
+  assert.strictEqual(PE.compare.copy(a, a, ['pilot.rank']), false, 'copying equal values changes nothing');
+
+  const c = PE.createState(PE.games.xwing, 'C', get('ROOKIE.PLT'));
+  c.set('tour.2.status', 1);
+  assert.strictEqual(c.get('tour.current'), 2);
+  const d = PE.createState(PE.games.xwing, 'D', get('ROOKIE.PLT'));
+  const currentBefore = d.get('tour.current');
+  PE.compare.copy(c, d, ['tour.2.status']);
+  assert.strictEqual(d.get('tour.2.status'), 1);
+  assert.strictEqual(d.get('tour.current'), currentBefore, 'no sync side effects');
+  d.undo();
+  const e = PE.createState(PE.games.xwing, 'E', get('ROOKIE.PLT'));
+  e.set('tour.0.ops', 5);
+  PE.compare.copy(e, d, ['tour.0.ops']);
+  assert.strictEqual(d.get('tour.0.last'), e.get('tour.0.last'), 'ops and last slot travel together');
 });
 
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {

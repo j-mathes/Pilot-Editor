@@ -139,6 +139,17 @@
     state.setEnforce = on => { enforce = !!on; };
     state.enforcing = () => enforce;
 
+    // Sets values exactly as given, with no onChange sync or rules, as one undo step (used when copying from another pilot).
+    state.assign = function (map) {
+      let changed = false;
+      batch(() => {
+        for (const id of Object.keys(map)) {
+          if (index.has(id) && setRaw(id, map[id])) changed = true;
+        }
+      });
+      return changed;
+    };
+
     state.batch = function (fn) {
       batch(() => fn({
         get: hookApi.get,

@@ -20,28 +20,29 @@
         <p class="brand-sub">X-Wing and TIE Fighter pilot files</p>
       </div>
     </div>
-    <span class="file-chip" id="fileChip" hidden></span>
+    <span class="file-chip diff-hide" id="fileChip" hidden></span>
 
     <div class="toolbar" role="toolbar" aria-label="Pilot file actions">
-      <button type="button" class="btn" id="btnOpen" title="Open (Ctrl+O)">Open</button>
-      <select id="newSelect" class="btn" aria-label="New pilot" title="Start a new, blank pilot for a game">
+      <button type="button" class="btn diff-hide" id="btnOpen" title="Open (Ctrl+O)">Open</button>
+      <select id="newSelect" class="btn diff-hide" aria-label="New pilot" title="Start a new, blank pilot for a game">
         <option value="">New pilot...</option>
       </select>
-      <button type="button" class="btn primary" id="btnSave" title="Save (Ctrl+S)" disabled>Save</button>
-      <button type="button" class="btn" id="btnSaveAs" title="Save As (Ctrl+Shift+S)" disabled>Save as</button>
-      <button type="button" class="btn" id="btnClose" title="Close this pilot and go back to the start page (asks first if there are unsaved changes)" disabled>Close</button>
-      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="btn primary diff-hide" id="btnSave" title="Save (Ctrl+S)" disabled>Save</button>
+      <button type="button" class="btn diff-hide" id="btnSaveAs" title="Save As (Ctrl+Shift+S)" disabled>Save as</button>
+      <button type="button" class="btn diff-hide" id="btnClose" title="Close this pilot and go back to the start page (asks first if there are unsaved changes)" disabled>Close</button>
+      <span class="sep diff-hide" aria-hidden="true"></span>
       <button type="button" class="btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
       <button type="button" class="btn" id="btnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
-      <select id="presetSelect" class="btn" aria-label="Presets" title="Apply a preset to this pilot (can be undone)" disabled></select>
-      <button type="button" class="btn" id="btnChanges" aria-expanded="false" aria-controls="drawer" title="Show changes since the file was opened or saved, and warnings" disabled>
+      <select id="presetSelect" class="btn diff-hide" aria-label="Presets" title="Apply a preset to this pilot (can be undone)" disabled></select>
+      <button type="button" class="btn diff-hide" id="btnCompare" title="Compare this pilot with another file of the same game and copy fields between them" disabled>Compare</button>
+      <button type="button" class="btn diff-hide" id="btnChanges" aria-expanded="false" aria-controls="drawer" title="Show changes since the file was opened or saved, and warnings" disabled>
         Changes <span class="count" id="changeCount" hidden></span> <span class="count warn" id="warnBadge" hidden></span>
       </button>
-      <button type="button" class="btn" id="btnRestore" title="Copies of files as they were opened">Restore</button>
-      <label class="opt" title="On the first in-place save, also download the file as it was opened (.bak)">
+      <button type="button" class="btn diff-hide" id="btnRestore" title="Copies of files as they were opened">Restore</button>
+      <label class="opt diff-hide" title="On the first in-place save, also download the file as it was opened (.bak)">
         <input type="checkbox" id="optBackup" checked> Backup original
       </label>
-      <label class="opt" title="Keep related values consistent with the game's rules as you edit, for example choosing the rank General raises the score to 500,000. Changes made this way are listed and can be undone.">
+      <label class="opt diff-hide" title="Keep related values consistent with the game's rules as you edit, for example choosing the rank General raises the score to 500,000. Changes made this way are listed and can be undone.">
         <input type="checkbox" id="optEnforce"> Enforce rules
       </label>
       <button type="button" class="btn" id="btnTheme" title="Switch light or dark theme">Theme</button>
@@ -93,6 +94,7 @@
         </div>
         <div id="sections"></div>
       </div>
+      <section class="diff" id="diff" aria-label="Compare pilots" hidden></section>
     </main>
 
     <aside class="drawer" id="drawer" aria-label="Changes and warnings" hidden>
@@ -160,6 +162,15 @@
         <li>The name box sets the file name; the games use it as the pilot name.</li>
       </ul>
 
+      <h3>Comparing two pilots</h3>
+      <ul>
+        <li><strong>Compare</strong> asks for a second file of the same game and shows the two pilots side by side, with the open pilot on the left. Only the fields that differ are listed, grouped like the sections; untick Differences only to see every field, or type in the filter to narrow the list.</li>
+        <li>The arrows between the values copy a field to the left or right file. The arrows on a group heading copy that group's shown differences, and the <em>all</em> buttons in the table header copy every shown difference. Related fields travel together (operations completed and last completed slot).</li>
+        <li>Copies set values exactly as they are in the other file; Enforce rules is not applied. Unknown bytes are not compared or copied.</li>
+        <li>Undo and Redo step back through the copies, whichever side they changed. Save writes a side, and each side has its own Save button. <strong>Done</strong> returns to editing; it asks first if the other file has unsaved changes.</li>
+        <li>Opening files is switched off while comparing.</li>
+      </ul>
+
       <h3>X-Wing notes</h3>
       <ul>
         <li>Tours 4 and 5 store their operations in interleaved a/b slots. Operations completed counts a pair once, and the last completed slot is a slot position, not a count. The editor warns when the two disagree.</li>
@@ -194,11 +205,13 @@
   <script src="js/core/codec.js"></script>
   <script src="js/core/state.js"></script>
   <script src="js/core/rules.js"></script>
+  <script src="js/core/compare.js"></script>
   <script src="js/core/files.js"></script>
   <script src="js/ui/widgets.js"></script>
   <script src="js/ui/sections.js"></script>
   <script src="js/ui/shell.js"></script>
   <script src="js/ui/help.js"></script>
+  <script src="js/ui/diff.js"></script>
   <script src="js/games/xwing.js"></script>
   <script src="js/games/tie.js"></script>
   <script src="js/app.js"></script>

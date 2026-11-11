@@ -63,21 +63,21 @@
     shell.banner('Started a new ' + def.name + ' pilot. Values are a best-effort blank; compare with a pilot created in the game.', 'info');
   }
 
-  function save(asNew) {
-    const s = session.state;
+  function saveSession(sess, asNew) {
+    const s = sess.state;
     if (!s) return Promise.resolve();
     const bytes = s.toBytes({ mirror: true });
     const fileName = s.name + s.def.ext[0];
     let work;
-    if (!asNew && session.handle) {
-      if (!session.backupDone && $('optBackup').checked) PE.files.download(fileName + '.bak', session.openedBytes);
-      session.backupDone = true;
-      work = PE.files.writeHandle(session.handle, bytes).then(() => 'Saved ' + fileName + ' in place.');
+    if (!asNew && sess.handle) {
+      if (!sess.backupDone && $('optBackup').checked) PE.files.download(fileName + '.bak', sess.openedBytes);
+      sess.backupDone = true;
+      work = PE.files.writeHandle(sess.handle, bytes).then(() => 'Saved ' + fileName + ' in place.');
     } else if (PE.files.canSaveAs()) {
       work = PE.files.saveAsPicker(fileName, s.def.ext[0], bytes).then(handle => {
         if (!handle) return null;
-        session.handle = handle;
-        session.backupDone = true;
+        sess.handle = handle;
+        sess.backupDone = true;
         s.setName(PE.files.baseName(handle.name));
         return 'Saved ' + handle.name + '.';
       });
@@ -90,6 +90,50 @@
       s.markSaved(bytes);
       shell.banner(msg, 'info');
     }).catch(err => shell.banner('Could not save: ' + err.message, 'error'));
+  }
+
+  const save = asNew => saveSession(session, asNew);
+
+  // ---- compare with a second file of the same game ----
+
+  function compareWith(name, bytes, handle) {
+    const left = session.state;
+    if (!left || PE.ui.diff.active()) return;
+    let det, state;
+    try {
+      det = PE.files.detect(name, bytes.length);
+      state = PE.createState(det.def, PE.files.baseName(name), bytes);
+    } catch (err) {
+      shell.banner(err.message, 'error');
+      return;
+    }
+    if (det.def !== left.def) {
+      shell.banner(name + ' is a ' + det.def.name + ' pilot; compare needs two ' + left.def.name + ' pilots.', 'error');
+      return;
+    }
+    shell.banner(null);
+    const right = { state, handle: handle || null, openedBytes: new Uint8Array(bytes), backupDone: false };
+    PE.ui.diff.open({ left: session, right, save: sess => saveSession(sess, false), exit: exitCompare });
+  }
+
+  function exitCompare() {
+    if (PE.ui.diff.otherDirty() && !root.confirm('The other file has unsaved changes. Discard them?')) return;
+    PE.ui.diff.close();
+  }
+
+  function startCompare() {
+    if (!session.state || PE.ui.diff.active()) return;
+    PE.files.pickFile().then(r => { if (r) compareWith(r.name, r.bytes, r.handle); })
+      .catch(err => shell.banner('Could not open the file: ' + err.message, 'error'));
+  }
+
+  function undo() { return PE.ui.diff.active() ? PE.ui.diff.undo() : !!(session.state && session.state.undo()); }
+  function redo() { return PE.ui.diff.active() ? PE.ui.diff.redo() : !!(session.state && session.state.redo()); }
+
+  function inCompareNotice() {
+    if (!PE.ui.diff.active()) return false;
+    shell.banner('Press Done to leave the comparison before opening another file.', 'info');
+    return true;
   }
 
   function closePilot() {
@@ -149,8 +193,9 @@
     $('btnSave').addEventListener('click', () => save(false));
     $('btnSaveAs').addEventListener('click', () => save(true));
     $('btnClose').addEventListener('click', closePilot);
-    $('btnUndo').addEventListener('click', () => session.state && session.state.undo());
-    $('btnRedo').addEventListener('click', () => session.state && session.state.redo());
+    $('btnUndo').addEventListener('click', undo);
+    $('btnRedo').addEventListener('click', redo);
+    $('btnCompare').addEventListener('click', startCompare);
     $('btnChanges').addEventListener('click', () => shell.toggleDrawer());
     $('closeDrawer').addEventListener('click', () => shell.toggleDrawer(false));
     $('btnRestore').addEventListener('click', showRestore);
@@ -188,6 +233,7 @@
       e.preventDefault();
       dragDepth = 0;
       $('dropOverlay').hidden = true;
+      if (inCompareNotice()) return;
       const item = e.dataTransfer.items && e.dataTransfer.items[0];
       const file = e.dataTransfer.files && e.dataTransfer.files[0];
       if (!file) return;
@@ -200,17 +246,17 @@
       if (e.key === 'F1') { e.preventDefault(); PE.ui.help.open(); return; }
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
-      if (key === 'o') { e.preventDefault(); openPicker(); }
+      if (key === 'o') { e.preventDefault(); if (!inCompareNotice()) openPicker(); }
       else if (key === 's') { e.preventDefault(); save(e.shiftKey); }
       else if ((key === 'z' || key === 'y') && session.state) {
         e.preventDefault();
         if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-        if (key === 'y' || e.shiftKey) session.state.redo(); else session.state.undo();
+        if (key === 'y' || e.shiftKey) redo(); else undo();
       }
     });
 
     root.addEventListener('beforeunload', e => {
-      if (session.state && session.state.isDirty()) { e.preventDefault(); e.returnValue = ''; }
+      if ((session.state && session.state.isDirty()) || PE.ui.diff.otherDirty()) { e.preventDefault(); e.returnValue = ''; }
     });
 
     if (!PE.files.canSaveAs()) {
@@ -218,7 +264,7 @@
     }
   }
 
-  PE.app = { init, session, loadBytes, newPilot, save, closePilot };
+  PE.app = { init, session, loadBytes, newPilot, save, closePilot, compareWith, exitCompare };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

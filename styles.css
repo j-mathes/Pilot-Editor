@@ -256,6 +256,34 @@ table.grid tr:last-child > * { border-bottom: 0; }
 .site-footer a { color: var(--muted); }
 .site-footer a:hover { color: var(--accent); }
 
+/* ---- compare view ---- */
+body.diff-mode .diff-hide { display: none; }
+body.diff-mode .layout { grid-template-columns: minmax(0, 1fr); }
+.diff { display: grid; gap: 10px; }
+.diff[hidden] { display: none; }
+.diff-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.diff-bar h2 { font-size: 20px; }
+.diff-bar .search { margin-left: auto; }
+.diff-count { color: var(--muted); }
+.diff-wrap { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.diff-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.diff-table thead th:nth-child(1) { width: 38%; }
+.diff-table thead th:nth-child(3) { width: 130px; }
+.diff-table th, .diff-table td { padding: 5px 10px; border-bottom: 1px solid var(--line); text-align: left; font-weight: normal; vertical-align: middle; }
+.diff-table thead th { position: sticky; top: 56px; z-index: 1; background: var(--panel2); font-weight: 600; }
+.diff-side { display: table-cell; }
+.diff-side strong { margin-right: 8px; }
+.diff-side .btn { margin-left: 8px; }
+.diff-dirty { color: var(--warn); font-size: 12px; }
+.diff-mid { white-space: nowrap; text-align: center !important; }
+.diff-mid .btn { margin: 0 2px; }
+.diff-group th, .diff-group td { background: var(--panel2); }
+.diff-group th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: none; }
+.diff-table tr.same th, .diff-table tr.same td { color: var(--muted); }
+.diff-table tr.differs .diff-val { background: color-mix(in srgb, var(--accent2) 18%, transparent); }
+.diff-val { font-variant-numeric: tabular-nums; }
+.diff-table tr.empty td { color: var(--muted); text-align: center; padding: 20px; }
+
 /* ---- dialog and overlay ---- */
 dialog {
   width: min(560px, 92vw); color: var(--text); background: var(--panel);

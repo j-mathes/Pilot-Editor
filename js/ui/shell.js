@@ -50,9 +50,10 @@
     const s = current && current.state;
     const chip = $('fileChip');
     chip.hidden = !s;
-    $('btnUndo').disabled = !s || !s.canUndo();
-    $('btnRedo').disabled = !s || !s.canRedo();
-    for (const id of ['btnSave', 'btnSaveAs', 'btnClose', 'btnChanges', 'presetSelect']) $(id).disabled = !s;
+    const diffOn = PE.ui.diff && PE.ui.diff.active();
+    $('btnUndo').disabled = diffOn ? !PE.ui.diff.canUndo() : (!s || !s.canUndo());
+    $('btnRedo').disabled = diffOn ? !PE.ui.diff.canRedo() : (!s || !s.canRedo());
+    for (const id of ['btnSave', 'btnSaveAs', 'btnClose', 'btnCompare', 'btnChanges', 'presetSelect']) $(id).disabled = !s;
     if (!s) { document.title = 'Pilot Editor'; return; }
     const dirty = s.isDirty();
     chip.textContent = s.name + s.def.ext[0] + ' · ' + s.length + ' bytes' + (dirty ? ' · unsaved changes' : '');

@@ -231,6 +231,57 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     $('optEnforce').dispatchEvent(new w.Event('change'));
   });
 
+  check('Compare: wrong game is refused; same game opens a clean view, copies both ways, undoes and exits', () => {
+    w.confirm = () => true;
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    PE.app.compareWith('TOPACE10.TFR', read('reference/TIE-Fighter/TOPACE10.TFR'), null);
+    assert(!d.body.classList.contains('diff-mode'));
+    assert(/compare needs two X-Wing pilots/.test($('bannerText').textContent), $('bannerText').textContent);
+
+    PE.app.compareWith('ROOKIE.PLT', read('reference/X-Wing/ROOKIE.PLT'), null);
+    assert(d.body.classList.contains('diff-mode'));
+    assert(!$('diff').hidden && $('editor').hidden && $('sidebar').hidden && $('drawer').hidden);
+    for (const id of ['btnOpen', 'btnSave', 'btnClose', 'btnChanges', 'btnCompare', 'presetSelect', 'btnRestore']) assert($(id).classList.contains('diff-hide'), id);
+    for (const id of ['btnUndo', 'btnRedo', 'btnTheme', 'btnHelp']) assert(!$(id).classList.contains('diff-hide'), id);
+    const countOf = () => Number(/^(\d+) difference/.exec(d.querySelector('.diff-count').textContent)[1]);
+    const total = countOf();
+    assert(total > 20 && d.querySelectorAll('#diff tr.same').length === 0, 'only differences are listed by default');
+    assert($('diffOnly').checked);
+
+    const left = PE.app.session.state;
+    const rankRow = d.querySelector('#diff tr[data-row="pilot.rank"]');
+    assert(rankRow, 'rank row');
+    rankRow.querySelector('button[data-dir="left"]').click();
+    assert.strictEqual(left.get('pilot.rank'), 0, 'copied the right value into the left file');
+    assert.strictEqual(countOf(), total - 1);
+    assert($('btnUndo').disabled === false);
+    $('btnUndo').click();
+    assert.strictEqual(left.get('pilot.rank'), 5);
+    assert.strictEqual(countOf(), total);
+    assert($('btnRedo').disabled === false);
+
+    d.querySelector('#diff .diff-mid button[aria-label="Copy every shown difference to the right file"]').click();
+    assert(/same values/.test(d.querySelector('.diff-count').textContent));
+    assert(/unsaved/.test(d.querySelector('.diff-right .diff-dirty').textContent) && !d.querySelector('.diff-right .diff-dirty').hidden);
+    assert(d.querySelector('.diff-left .diff-dirty').hidden, 'the left file was not changed');
+    $('btnUndo').click();
+    assert.strictEqual(countOf(), total);
+
+    $('diffOnly').checked = false;
+    $('diffOnly').dispatchEvent(new w.Event('change'));
+    assert(d.querySelectorAll('#diff tr.same').length > 100, 'show all lists identical fields too');
+    const filter = d.querySelector('#diff input[type=search]');
+    filter.value = 'kalidor';
+    filter.dispatchEvent(new w.Event('input'));
+    assert(d.querySelectorAll('#diff tbody tr[data-row]').length > 0 && d.querySelectorAll('#diff tbody tr[data-row]').length < 5);
+
+    $('btnTheme').click();
+    $('btnTheme').click();
+    PE.app.exitCompare();
+    assert(!d.body.classList.contains('diff-mode') && $('diff').hidden && !$('editor').hidden && !$('sidebar').hidden);
+    assert.strictEqual(PE.app.session.state, left);
+  });
+
   check('Help lists the unmapped byte ranges of both games and opens with F1', () => {
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'F1', cancelable: true }));
     const x = $('helpRegionsXwing').textContent, t = $('helpRegionsTie').textContent;

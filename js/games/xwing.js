@@ -358,6 +358,12 @@
     return out;
   }
 
+  // Operations completed and the last completed slot are one fact, so a compare copy takes both.
+  function copyWith(id) {
+    const m = /^tour\.(\d)\.(ops|last)$/.exec(id);
+    return m ? ['tour.' + m[1] + '.ops', 'tour.' + m[1] + '.last'] : [];
+  }
+
   const HIT_TO_FIRED = {
     'stat.laserCraft': 'stat.laserFired', 'stat.laserGround': 'stat.laserFired',
     'stat.missileCraft': 'stat.missileFired', 'stat.missileGround': 'stat.missileFired'
@@ -425,7 +431,7 @@
       3410: { half: 1705 }
     },
     theme: { accent: '#e8832a', accent2: '#3d7fd6', glyph: 'X' },
-    fields, derived, sections, onChange, enforce, warnings, blank, presets,
+    fields, derived, sections, onChange, enforce, copyWith, warnings, blank, presets,
     summary: g => (RANKS[g('pilot.rank')] || 'Unknown rank') + ' · ' + (HEALTH[g('pilot.health')] || 'Unknown health') +
       ' · ' + g('pilot.score').toLocaleString('en-US') + ' Tour of Duty points'
   };
