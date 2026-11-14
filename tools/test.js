@@ -474,6 +474,48 @@ test('TIE: max score buttons for training, historic combat and battles', () => {
   assert.strictEqual(st.get('hist.0.0.score'), LIMIT, 'one undo reverts one button');
 });
 
+test('X-Wing: Tour of Duty points can be set to the total of the recorded operation scores', () => {
+  const def = PE.games.xwing;
+  const st = PE.createState(def, 'NEW', def.blank());
+  const d = def.derived['pilot.todTotal'];
+  assert.strictEqual(st.derived(d), 0);
+  st.set('tour.0.op.0', 1200);
+  st.set('tour.2.op.13', 3400);
+  st.set('tour.4.op.23', 560);
+  assert.strictEqual(st.derived(d), 5160);
+  assert.strictEqual(st.get('pilot.score'), 0, 'nothing changes until Sync is pressed');
+  st.set(d.sync.id, d.sync.value(st.get));
+  assert.strictEqual(st.get('pilot.score'), 5160);
+  st.undo();
+  assert.strictEqual(st.get('pilot.score'), 0);
+  const section = def.sections.find(s => s.id === 'pilot').blocks[0];
+  assert(section.items.some(i => i.derived === 'pilot.todTotal'), 'it is shown beside the points');
+});
+
+test('X-Wing: optional automatic Tour of Duty points follow the operation scores', () => {
+  const def = PE.games.xwing;
+  const st = PE.createState(def, 'NEW', def.blank());
+  st.set('tour.0.op.0', 1000);
+  assert.strictEqual(st.get('pilot.score'), 0, 'off by default');
+  st.setAuto('todPoints', true);
+  assert.strictEqual(st.hasAuto('todPoints'), true);
+  st.set('tour.1.op.3', 2500);
+  assert.strictEqual(st.get('pilot.score'), 3500, 'the points are recalculated from every tour');
+  st.undo();
+  assert.strictEqual(st.get('pilot.score'), 0, 'one undo reverts the edit and the points together');
+  st.batch(api => def.sections.find(s => s.id === 'campaign').blocks[0].cards[2].blocks[1].actions.find(a => a.label === 'Max scores').run(api));
+  assert.strictEqual(st.get('pilot.score'), 1000 + 14 * 999999);
+  st.setAuto('todPoints', false);
+  st.set('tour.0.op.0', 5);
+  assert.strictEqual(st.get('pilot.score'), 1000 + 14 * 999999, 'switched off again');
+  const other = PE.createState(def, 'B', def.blank());
+  other.setAuto('todPoints', true);
+  const a = PE.createState(def, 'A', def.blank());
+  a.set('tour.0.op.0', 777);
+  PE.compare.copy(a, other, ['tour.0.op.0']);
+  assert.strictEqual(other.get('pilot.score'), 0, 'copies in Compare are exact and do not recalculate');
+});
+
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
   const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE)/i.test(s.name) && s.name !== 'CALE.PLT');
   assert(roster.length >= 30, 'roster files missing: ' + roster.length);

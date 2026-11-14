@@ -445,6 +445,25 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     state.undo();
   });
 
+  check('Keep equal option makes the points follow the recorded operation scores', () => {
+    PE.app.newPilot('xwing');
+    const state = PE.app.session.state;
+    const box = d.querySelector('#sections input[aria-label="Keep equal"]');
+    assert(box, 'the option sits beside the total in the Pilot section');
+    if (box.checked) { box.checked = false; box.dispatchEvent(new w.Event('change')); }
+    state.set('tour.0.op.0', 4000);
+    assert.strictEqual(state.get('pilot.score'), 0);
+    box.checked = true;
+    box.dispatchEvent(new w.Event('change'));
+    assert.strictEqual(state.get('pilot.score'), 4000, 'switching it on sets the points to the total');
+    state.set('tour.2.op.1', 500);
+    assert.strictEqual(state.get('pilot.score'), 4500);
+    box.checked = false;
+    box.dispatchEvent(new w.Event('change'));
+    state.set('tour.2.op.1', 0);
+    assert.strictEqual(state.get('pilot.score'), 4500);
+  });
+
   check('Help covers the main features', () => {
     const text = $('helpDialog').textContent;
     for (const term of ['Compare', 'Enforce rules', 'Go to offset', 'Theme', 'Sync', 'Restore', 'Copy bytes', 'Presets', 'Shortcuts', 'Unknown bytes are kept']) assert(text.includes(term), 'Help is missing: ' + term);

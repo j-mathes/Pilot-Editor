@@ -151,6 +151,18 @@
         button.addEventListener('click', () => state.set(d.sync.id, d.sync.value(state.get)));
         wrap.append(button);
       }
+      if (d.auto) {
+        const storeKey = 'pilot-editor-auto-' + d.auto.key;
+        const box = h('input', { type: 'checkbox', 'aria-label': d.auto.label, title: d.auto.title });
+        try { box.checked = localStorage.getItem(storeKey) === '1'; } catch (e) { /* storage unavailable */ }
+        state.setAuto(d.auto.key, box.checked);
+        box.addEventListener('change', () => {
+          try { localStorage.setItem(storeKey, box.checked ? '1' : '0'); } catch (e) { /* storage unavailable */ }
+          state.setAuto(d.auto.key, box.checked);
+          if (box.checked && d.sync && state.get(d.sync.id) !== d.sync.value(state.get)) state.set(d.sync.id, d.sync.value(state.get));
+        });
+        wrap.append(h('label', { class: 'opt', title: d.auto.title }, box, ' ' + d.auto.label));
+      }
       function update() {
         const v = state.derived(d);
         out.textContent = fmt(v);

@@ -22,6 +22,7 @@
     let ruleDepth = 0;
     let adjusted = null; // rule-made edits of the current top-level set, for the user message
     const rawKeys = new Set(); // 'raw:<offset>' ids for unmapped bytes changed by hand (compare view)
+    const autos = new Set(); // keys of the game's optional "keep in step" calculations that are switched on
     let ownersMap = null;
 
     const state = { def, variant, name, get length() { return sourceBytes.length; } };
@@ -98,6 +99,10 @@
         ruleDepth++;
         try { def.enforce(id, v, ruleApi); } finally { ruleDepth--; }
       }
+      if (def.autoUpdate && autos.size && ruleDepth < 8) {
+        ruleDepth++;
+        try { def.autoUpdate(id, v, ruleApi, autos); } finally { ruleDepth--; }
+      }
       return true;
     }
 
@@ -139,6 +144,8 @@
     };
 
     state.setEnforce = on => { enforce = !!on; };
+    state.setAuto = (key, on) => { if (on) autos.add(key); else autos.delete(key); };
+    state.hasAuto = key => autos.has(key);
     state.enforcing = () => enforce;
 
     // Sets values exactly as given, with no onChange sync or rules, as one undo step (used when copying from another pilot).

@@ -192,6 +192,20 @@
     };
   });
 
+  const todTotal = g => TOUR_SLOTS.reduce((sum, _, t) => sum + derived['tour.' + t + '.total'].compute(g), 0);
+  derived['pilot.todTotal'] = {
+    label: 'Total of the recorded operation scores',
+    hint: 'The sum of every operation score saved in the five tours. In the game\'s own files the Tour of Duty points do not always equal this sum, so the Sync button is a convenience, not a rule.',
+    compute: todTotal,
+    sync: { id: 'pilot.score', label: 'Set the Tour of Duty points to this total', value: todTotal },
+    auto: { key: 'todPoints', label: 'Keep equal', title: 'Keep the Tour of Duty points equal to this total: whenever you change an operation score the points are recalculated. Switching it on sets the points to the total now. Not applied to copies in Compare.' }
+  };
+
+  // Optional calculation (see the auto option above), run after each edit.
+  function autoUpdate(id, value, api, autos) {
+    if (autos.has('todPoints') && /^tour\.\d\.op\.\d+$/.test(id)) api.set('pilot.score', todTotal(api.get));
+  }
+
   const tourCards = TOUR_SLOTS.map((slots, t) => ({
     id: 'tour' + t,
     title: 'Tour ' + (t + 1) + (TOUR_TITLES[t] ? ': ' + TOUR_TITLES[t] : ''),
@@ -226,7 +240,7 @@
   const sections = [
     {
       id: 'pilot', title: 'Pilot',
-      blocks: [{ type: 'form', layout: 'list', items: ['pilot.health', 'pilot.rank', 'pilot.score', 'pilot.experience', 'tour.current', 'tour.currentOps'] }]
+      blocks: [{ type: 'form', layout: 'list', items: ['pilot.health', 'pilot.rank', 'pilot.score', { derived: 'pilot.todTotal' }, 'pilot.experience', 'tour.current', 'tour.currentOps'] }]
     },
     {
       id: 'training', title: 'Training',
@@ -443,7 +457,7 @@
       3410: { half: 1705 }
     },
     theme: { accent: '#e8832a', accent2: '#3d7fd6', glyph: 'X' },
-    fields, derived, sections, onChange, enforce, copyWith, warnings, blank, presets,
+    fields, derived, sections, onChange, enforce, autoUpdate, copyWith, warnings, blank, presets,
     summary: g => (RANKS[g('pilot.rank')] || 'Unknown rank') + ' · ' + (HEALTH[g('pilot.health')] || 'Unknown health') +
       ' · ' + g('pilot.score').toLocaleString('en-US') + ' Tour of Duty points'
   };
