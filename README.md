@@ -1,6 +1,6 @@
 # Pilot Editor
 
-**Version 1.5.0**
+**Version 1.6.0**
 
 A browser-based editor for X-Wing (`.plt`) and TIE Fighter (`.tfr`) pilot files. It runs entirely in your browser, so files stay on your computer.
 
@@ -66,6 +66,7 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International. See [LI
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.6.0 | 2026-11-14 | Max-score buttons (X-Wing training, tours and historic missions; TIE training, battles and historic missions). X-Wing: the total of the recorded operation scores can be kept in step automatically (Sync and Keep equal), and a Convert to... menu makes a new unsaved pilot in the 1705-byte (1998) or 1706-byte (1993 original and 1994 Collector's CD) layout. A 3410-byte X-Wing file (made by an old editor, not valid for any game version) opens by its first half with a warning and saves as a proper 1705-byte file. The file chip names the game versions a file is for. Raw bytes and Compare gain Rows with data only and Rows with changes only filters. New pilots are checked byte for byte against pilots created in the original games. |
 | 1.5.0 | 2026-11-10 | Compare: open a second pilot of the same game beside the first in a clean view that lists only the differing fields, with copy arrows in both directions (per field, per group or all), its own Undo and Redo, and a Save button for each side. A Raw bytes panel under it compares every byte, including unknown ones, with ASCII, next and previous difference, go to offset, range selection and byte copies; its title, tools and column header stay in view while scrolling. The normal Raw bytes view gains an ASCII column, go to offset, byte selection with the field and value shown in the header, a frozen offset header and the same layout. |
 | 1.4.0 | 2026-11-10 | Enforce rules option (off by default): edits keep related values consistent with the game rules, in one undo step with a message listing what changed. Covers rank and score, TIE Secret Order levels, X-Wing tours and medals, the Kalidor Crescent, weapon hits against shots fired, TIE battle and kill totals. Rules that cannot be enforced stay as warnings, now counted on the Changes button. Clearer Kalidor Crescent wording. |
 | 1.3.0 | 2026-11-10 | Help panel (Help button or F1) covering opening and saving, editing, notes for each game, shortcuts and the byte ranges no field maps to. Raw bytes view: tooltips start with the hex and decimal address, and double-clicking a mapped byte jumps to its field. |
