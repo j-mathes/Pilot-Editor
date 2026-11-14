@@ -244,6 +244,7 @@ table.grid tr:last-child > * { border-bottom: 0; }
 .hex-head span { cursor: default; }
 .hex-off { color: var(--muted); }
 .hex-sep { margin: 8px 0 4px; color: var(--muted); font-weight: 600; font-family: var(--font); }
+.hex-gap { color: var(--muted); padding: 2px 0 2px 5ch; }
 .hex-pane > span { display: inline-block; width: 2ch; margin-right: 1ch; text-align: center; cursor: pointer; border-radius: 2px; }
 .hex-row .u { color: var(--muted); opacity: .8; }
 .hex-row .k { color: var(--text); }

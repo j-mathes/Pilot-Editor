@@ -340,6 +340,14 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert(d.querySelectorAll('.hx .hx-gap').length > 0 && d.querySelectorAll('.hx .hl > .b').length < left.activeLength());
     only.checked = false;
     only.dispatchEvent(new w.Event('change'));
+    const dataBox = d.querySelectorAll('#diff .hx-bar input[type=checkbox]')[1];
+    const allRows = d.querySelectorAll('#diff .hx-rows .hx-row').length;
+    dataBox.checked = true;
+    dataBox.dispatchEvent(new w.Event('change'));
+    const dataRows = d.querySelectorAll('#diff .hx-rows .hx-row').length;
+    assert(dataRows > 0 && dataRows < allRows, 'rows where both files are all 00 are hidden: ' + dataRows + ' of ' + allRows);
+    dataBox.checked = false;
+    dataBox.dispatchEvent(new w.Event('change'));
 
     const cell = d.querySelector('.hx .hl > .b[data-i="737"]');
     cell.dispatchEvent(new w.MouseEvent('mousedown', { bubbles: true, button: 0 }));
@@ -403,6 +411,38 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert.strictEqual(selected().length, 17, 'shift-arrow extends it');
     grid.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     assert.deepStrictEqual(selected(), [], 'Escape clears it');
+  });
+
+  check('Raw bytes filters: rows with data only and rows with changes only', () => {
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    const state = PE.app.session.state;
+    const rows = () => d.querySelectorAll('#sections .hex-row').length;
+    const boxes = [...d.querySelectorAll('#sections .hex-bar input[type=checkbox]')];
+    assert.strictEqual(boxes.length, 2);
+    const [data, changed] = boxes;
+    const flip = (box, on) => { box.checked = on; box.dispatchEvent(new w.Event('change')); };
+    const all = rows();
+    flip(changed, true);
+    assert.strictEqual(rows(), 0, 'nothing has changed yet');
+    assert(/No rows match/.test(d.querySelector('#sections .hex').textContent));
+    state.set('pilot.rank', state.get('pilot.rank') === 1 ? 2 : 1);
+    flip(changed, false);
+    flip(changed, true);
+    assert.strictEqual(rows(), 1, 'only the row holding the changed byte is shown');
+    assert(d.querySelector('#sections .hex-gap'), 'skipped rows are marked');
+    flip(changed, false);
+    assert.strictEqual(rows(), all);
+    flip(data, true);
+    const withData = rows();
+    assert(withData > 0 && withData < all, 'rows that are all 00 are hidden: ' + withData + ' of ' + all);
+    assert([...d.querySelectorAll('#sections .hex-row')].every(r => [...r.querySelectorAll('.hex-pane > span[data-i]')].some(c => c.textContent !== '00')));
+    flip(changed, true);
+    assert.strictEqual(rows(), 1, 'both filters together');
+    const go = d.querySelector('#sections .hx-go');
+    go.value = '1000';
+    go.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter' }));
+    assert(!data.checked && !changed.checked && rows() === all, 'Go to offset clears the filters when the byte is hidden');
+    state.undo();
   });
 
   check('Help covers the main features', () => {

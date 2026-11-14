@@ -75,6 +75,7 @@
       onkeydown: e => { if (e.key === 'Enter') goTo(hxGo.value); }
     });
     const hxOnly = h('input', { type: 'checkbox', title: 'Show only the rows that contain differing bytes' });
+    const hxData = h('input', { type: 'checkbox', title: 'Show only the rows where either file has a byte other than 00' });
     const hxSel = h('span', { class: 'hx-sel', role: 'status' });
     const hxToLeft = h('button', { type: 'button', class: 'btn small', title: 'Copy the selected bytes to the left file (' + fileName(L) + ')', onclick: () => copySel('left') }, '\u25C0 Copy bytes');
     const hxToRight = h('button', { type: 'button', class: 'btn small', title: 'Copy the selected bytes to the right file (' + fileName(R) + ')', onclick: () => copySel('right') }, 'Copy bytes \u25B6');
@@ -96,6 +97,7 @@
         h('div', { class: 'hx-title' }, h('strong', null, 'Raw bytes'), ' ', hxSummary),
         h('div', { class: 'hx-bar' }, hxPrev, hxNext, hxGo,
           h('label', { class: 'opt', title: 'Show only the rows that contain differing bytes' }, hxOnly, ' Rows with differences only'),
+          h('label', { class: 'opt', title: 'Show only the rows where either file has a byte other than 00' }, hxData, ' Rows with data only'),
           hxSel, hxToLeft, hxToRight, hxClear),
         hxNote,
         h('div', { class: 'hx-headwrap' }, hxHead)),
@@ -121,8 +123,12 @@
       for (let start = 0; start < length; start += 16) {
         const end = Math.min(start + 16, length);
         let rowDiff = false;
-        for (let i = start; i < end; i++) if (flags[i]) { rowDiff = true; break; }
-        if (only && !rowDiff) {
+        let rowData = false;
+        for (let i = start; i < end; i++) {
+          if (flags[i]) rowDiff = true;
+          if ((i < la && a[i] !== 0) || (i < lb && b[i] !== 0)) rowData = true;
+        }
+        if ((only && !rowDiff) || (hxData.checked && !rowData)) {
           if (!gap) html += '<div class="hx-gap">\u22EF</div>';
           gap = true;
           continue;
@@ -210,7 +216,7 @@
         return;
       }
       sel = { a: n, b: n };
-      if (!cells.l[n]) { hxOnly.checked = false; renderHex(); }
+      if (!cells.l[n]) { hxOnly.checked = false; hxData.checked = false; renderHex(); }
       paint();
       scrollToCell(n, 'center');
     }
@@ -280,6 +286,7 @@
     const stopDrag = () => { dragging = false; };
     document.addEventListener('mouseup', stopDrag);
     hxOnly.addEventListener('change', renderHex);
+    hxData.addEventListener('change', renderHex);
 
     const host = $('diff');
     host.textContent = '';

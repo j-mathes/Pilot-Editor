@@ -143,6 +143,9 @@
     });
 
     const range = () => (sel ? [Math.min(sel.a, sel.b), Math.max(sel.a, sel.b)] : null);
+    const onlyData = h('input', { type: 'checkbox', title: 'Show only the rows that contain a byte other than 00', onchange: () => render() });
+    const onlyChanged = h('input', { type: 'checkbox', title: 'Show only the rows that contain a byte changed since the file was opened', onchange: () => render() });
+    let shown = 0;
     const hex4 = n => '0x' + PE.bin.hex(n, 4);
 
     function paint() {
@@ -170,6 +173,7 @@
         return;
       }
       sel = { a: n, b: n };
+      if (!cells[n]) { onlyData.checked = false; onlyChanged.checked = false; render(); }
       paint();
       scrollTo(n, 'center');
     }
@@ -181,8 +185,22 @@
 
     function rowsHtml(now, src, from, to) {
       let html = '';
+      let skipped = false;
       for (let start = from; start < to; start += 16) {
         const end = Math.min(start + 16, to);
+        let hasData = false;
+        let hasChange = false;
+        for (let i = start; i < end; i++) {
+          if (now[i] !== 0) hasData = true;
+          if (now[i] !== src[i]) hasChange = true;
+        }
+        if ((onlyData.checked && !hasData) || (onlyChanged.checked && !hasChange)) {
+          if (!skipped) html += '<div class="hex-gap">\u22EF</div>';
+          skipped = true;
+          continue;
+        }
+        skipped = false;
+        shown++;
         let cells = '';
         let chars = '';
         for (let i = start; i < end; i++) {
@@ -209,6 +227,7 @@
       let changed = 0;
       for (let i = 0; i < now.length; i++) if (now[i] !== src[i]) changed++;
       let html = '';
+      shown = 0;
       if (half && now.length === half * 2) {
         html += '<div class="hex-sep">Active pilot</div>' + rowsHtml(now, src, 0, half);
         html += '<div class="hex-sep">Backup copy</div>' + rowsHtml(now, src, half, now.length);
@@ -216,6 +235,7 @@
         html += rowsHtml(now, src, 0, now.length);
       }
       host.innerHTML = html;
+      if (!shown) host.insertAdjacentHTML('beforeend', '<div class="hex-gap">No rows match the filter.</div>');
       cells = [];
       chars = [];
       for (const el of host.querySelectorAll('.hex-pane > span[data-i]')) cells[Number(el.dataset.i)] = el;
@@ -272,7 +292,10 @@
       requestAnimationFrame(() => { queued = false; render(); });
     });
     render();
-    return h('div', { class: 'block' }, summary, h('div', { class: 'hex-bar' }, goInput, status), h('div', { class: 'hex-box' }, head, host));
+    return h('div', { class: 'block' }, summary, h('div', { class: 'hex-bar' }, goInput,
+      h('label', { class: 'opt', title: 'Show only the rows that contain a byte other than 00' }, onlyData, ' Rows with data only'),
+      h('label', { class: 'opt', title: 'Show only the rows that contain a byte changed since the file was opened' }, onlyChanged, ' Rows with changes only'),
+      status), h('div', { class: 'hex-box' }, head, host));
   }
 
   function renderBlock(state, widgets, block) {
