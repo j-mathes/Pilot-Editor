@@ -417,6 +417,18 @@ test('Compare: raw byte diff and byte copies update fields, keep unknown bytes, 
   assert.strictEqual(PE.compare.sameLayout(a, rookie), a.length === rookie.length, 'the 1706-byte layout is not aligned with the 1705-byte one');
 });
 
+test('X-Wing: training bulk buttons complete every level and max every best score in one undo step', () => {
+  const def = PE.games.xwing;
+  const st = PE.createState(def, 'NEW', def.blank());
+  const actions = def.sections.find(s => s.id === 'training').blocks[0].actions;
+  assert.deepStrictEqual(Array.from(actions, a => a.label), ['Complete all levels', 'Max all best scores']);
+  st.batch(api => actions[1].run(api));
+  for (let i = 0; i < 4; i++) assert.strictEqual(st.get('training.' + i + '.score'), 999999);
+  assert.strictEqual(st.get('training.0.level'), 0, 'levels are left alone');
+  st.undo();
+  assert.strictEqual(st.get('training.0.score'), 0);
+});
+
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
   const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE)/i.test(s.name) && s.name !== 'CALE.PLT');
   assert(roster.length >= 30, 'roster files missing: ' + roster.length);

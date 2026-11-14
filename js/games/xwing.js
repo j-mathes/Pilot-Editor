@@ -227,7 +227,10 @@
       blocks: [{
         type: 'table', title: 'Proving ground (training simulator)', columns: ['Level completed', 'Best score'],
         rows: SHIPS.map((name, i) => ({ label: name, cells: ['training.' + i + '.level', 'training.' + i + '.score'] })),
-        actions: [{ label: 'Complete all levels', title: 'Set every training ship to level 8 (can be undone)', run: api => SHIPS.forEach((_, i) => api.set('training.' + i + '.level', 8)) }]
+        actions: [
+          { label: 'Complete all levels', title: 'Set every training ship to level 8 (can be undone)', run: api => SHIPS.forEach((_, i) => api.set('training.' + i + '.level', 8)) },
+          { label: 'Max all best scores', title: 'Set every training best score to 999,999, the usual limit (can be undone)', run: api => SHIPS.forEach((_, i) => api.set('training.' + i + '.score', 999999)) }
+        ]
       }]
     },
     {
