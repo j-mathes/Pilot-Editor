@@ -458,6 +458,7 @@
     },
     theme: { accent: '#e8832a', accent2: '#3d7fd6', glyph: 'X' },
     fields, derived, sections, onChange, enforce, autoUpdate, copyWith, warnings, blank, presets,
+    opSlots: OP_SLOTS,
     summary: g => (RANKS[g('pilot.rank')] || 'Unknown rank') + ' · ' + (HEALTH[g('pilot.health')] || 'Unknown health') +
       ' · ' + g('pilot.score').toLocaleString('en-US') + ' Tour of Duty points'
   };
