@@ -429,6 +429,31 @@ test('X-Wing: training bulk buttons complete every level and max every best scor
   assert.strictEqual(st.get('training.0.score'), 0);
 });
 
+test('X-Wing: max score buttons for historic combat and tours of duty', () => {
+  const def = PE.games.xwing;
+  const st = PE.createState(def, 'NEW', def.blank());
+  const action = (block, label) => block.actions.find(a => a.label === label);
+  const hist = def.sections.find(s => s.id === 'historic').blocks[0];
+  st.batch(api => action(hist, 'Max all scores').run(api));
+  for (let g = 0; g < 5; g++) for (let m = 0; m < 6; m++) assert.strictEqual(st.get('hist.' + g + '.' + m + '.score'), 999999);
+  assert.strictEqual(st.get('hist.0.0.done'), false, 'completion ticks are left alone');
+  st.undo();
+  assert.strictEqual(st.get('hist.0.0.score'), 0);
+
+  const tours = def.sections.find(s => s.id === 'campaign').blocks[0].cards;
+  const three = tours[2].blocks[1];
+  st.batch(api => action(three, 'Max scores').run(api));
+  for (let i = 0; i < 14; i++) assert.strictEqual(st.get('tour.2.op.' + i), 999999);
+  const four = tours[3].blocks[1];
+  st.set('tour.3.op.6', 12345);
+  st.batch(api => action(four, 'Max scores').run(api));
+  assert.strictEqual(st.get('tour.3.op.6'), 999999, 'the b version that was flown is maxed');
+  assert.strictEqual(st.get('tour.3.op.5'), 0, 'and its a version is left alone');
+  assert.strictEqual(st.get('tour.3.op.8'), 999999, 'a pair with no score gets its first slot');
+  assert.strictEqual(st.get('tour.3.op.9'), 0);
+  assert.strictEqual(st.get('tour.3.op.0'), 999999);
+});
+
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
   const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE)/i.test(s.name) && s.name !== 'CALE.PLT');
   assert(roster.length >= 30, 'roster files missing: ' + roster.length);

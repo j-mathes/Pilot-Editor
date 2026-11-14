@@ -210,6 +210,12 @@
             api.set('tour.' + t + '.ops', TOUR_OPS[t]);
           }
         }, {
+          label: 'Max scores', title: 'Set the score of every operation in this tour to 999,999, the usual limit (can be undone). For the a and b versions in Tours 4 and 5 only the slot already scored, or the first, is set, as in real saves',
+          run: api => OP_SLOTS[t].forEach(group => {
+            const played = group.find(s => api.get('tour.' + t + '.op.' + s) > 0);
+            api.set('tour.' + t + '.op.' + (played === undefined ? group[0] : played), 999999);
+          })
+        }, {
           label: 'Clear scores', title: 'Set every operation score in this tour to 0',
           run: api => { for (let i = 0; i < slots; i++) api.set('tour.' + t + '.op.' + i, 0); }
         }]
@@ -244,6 +250,9 @@
         actions: [{
           label: 'Mark all complete', title: 'Tick every historic mission as complete (scores are not changed)',
           run: api => HISTORIC.forEach((_, g) => { for (let m = 0; m < 6; m++) api.set('hist.' + g + '.' + m + '.done', true); })
+        }, {
+          label: 'Max all scores', title: 'Set every historic mission score to 999,999, the usual limit (completion ticks are not changed)',
+          run: api => HISTORIC.forEach((_, g) => { for (let m = 0; m < 6; m++) api.set('hist.' + g + '.' + m + '.score', 999999); })
         }, {
           label: 'Clear all', title: 'Untick every historic mission and set its score to 0',
           run: api => HISTORIC.forEach((_, g) => {
