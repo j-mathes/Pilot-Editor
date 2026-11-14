@@ -22,7 +22,7 @@ const walk = (dir, re) => fs.readdirSync(path.join(root, dir), { withFileTypes: 
 for (const [dir, re] of [['reference/X-Wing', /\.(plt|bak)$/i], ['reference/TIE-Fighter', /\.tfr$/i]]) {
   for (const s of walk(dir, re)) {
     let bytes = new Uint8Array(fs.readFileSync(s.file));
-    if (bytes.length === 3410) bytes = bytes.slice(0, 1705); // the old editor's doubled files: keep the pilot data, the size is rejected on its own
+    if (bytes.length === 3410) bytes = bytes.slice(0, 1705); // the editor opens these by their first half
     samples.push({ name: s.name, bytes });
   }
 }

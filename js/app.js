@@ -67,7 +67,8 @@
     if (!def || !discardOk()) return;
     const bytes = def.blank();
     startSession(PE.createState(def, 'NEWPILOT', bytes), null, bytes);
-    shell.banner('Started a new ' + def.name + ' pilot. Values are a best-effort blank; compare with a pilot created in the game.', 'info');
+    shell.banner('Started a new ' + def.name + ' pilot (' + bytes.length + ' bytes), identical to a new pilot made in the game.' +
+      (def.layouts ? ' Use Convert to... for another version\'s file layout.' : ''), 'info');
   }
 
   function saveSession(sess, asNew) {
