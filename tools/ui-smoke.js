@@ -467,12 +467,51 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
   check('The file chip says which game version a file belongs to', () => {
     const chip = () => $('fileChip');
     PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
-    assert(/1706 bytes · for the original X-Wing \(1993, 1994\)/.test(chip().textContent), chip().textContent);
+    assert(/1706 bytes · for X-Wing 1993 or 1994 \(original or Collector's CD\)/.test(chip().textContent), chip().textContent);
     assert(/untested/.test(chip().title), chip().title);
     PE.app.loadBytes('ROOKIE.PLT', read('reference/X-Wing/ROOKIE.PLT'), null);
     assert(/1705 bytes · for X-Wing 1998/.test(chip().textContent), chip().textContent);
     PE.app.loadBytes('TOPACE10.TFR', read('reference/TIE-Fighter/TOPACE10.TFR'), null);
     assert(/3856 bytes · for TIE Fighter 1994, 1995 or 1998/.test(chip().textContent), chip().textContent);
+  });
+
+  check('A 3410-byte X-Wing file opens by its first half with a warning and is not tied to the opened file', () => {
+    w.confirm = () => true;
+    PE.app.loadBytes('RUSTYx.PLT', read('reference/X-Wing/RUSTYx.PLT'), { fake: 'handle' });
+    const state = PE.app.session.state;
+    assert.strictEqual(state.length, 1705);
+    assert.strictEqual(PE.app.session.handle, null, 'Save cannot overwrite the 3410-byte file');
+    assert(state.isDirty() && /unsaved/.test($('fileChip').textContent));
+    assert(/1705 bytes · for X-Wing 1998/.test($('fileChip').textContent), $('fileChip').textContent);
+    assert($('banner').classList.contains('warn'));
+    assert(/first 1705 of 3410 bytes/.test($('bannerText').textContent), $('bannerText').textContent);
+    assert(/not a valid pilot file/.test($('bannerList').textContent) && /second half differs/.test($('bannerList').textContent), $('bannerList').textContent);
+    assert.deepStrictEqual([...$('convertSelect').options].map(o => o.value), ['', '1706'], 'Convert offers the 1706 layout');
+  });
+
+  check('Convert makes a new unsaved pilot in another file layout', () => {
+    w.confirm = () => true;
+    PE.app.loadBytes('ROOKIE.PLT', read('reference/X-Wing/ROOKIE.PLT'), { fake: 'handle' });
+    const select = $('convertSelect');
+    assert(!select.disabled);
+    assert.deepStrictEqual([...select.options].map(o => o.value), ['', '1706']);
+    select.value = '1706';
+    select.dispatchEvent(new w.Event('change'));
+    const state = PE.app.session.state;
+    assert.strictEqual(state.length, 1706);
+    assert.strictEqual(PE.app.session.handle, null, 'the opened file is not overwritten');
+    assert(state.isDirty() && /unsaved/.test($('fileChip').textContent));
+    assert(/1706 bytes · for X-Wing 1993 or 1994/.test($('fileChip').textContent), $('fileChip').textContent);
+    assert(/Converted to 1993 original and 1994 Collector's CD/.test($('bannerText').textContent), $('bannerText').textContent);
+    assert.deepStrictEqual([...select.options].map(o => o.value), ['', '1705']);
+    let asked = '';
+    w.confirm = m => { asked = m; return false; };
+    select.value = '1705';
+    select.dispatchEvent(new w.Event('change'));
+    assert(/not been tried/.test(asked) && PE.app.session.state === state, 'declining the confirmation changes nothing');
+    w.confirm = () => true;
+    PE.app.loadBytes('TOPACE10.TFR', read('reference/TIE-Fighter/TOPACE10.TFR'), null);
+    assert($('convertSelect').disabled, 'TIE Fighter has nothing to convert to');
   });
 
   check('Help covers the main features', () => {

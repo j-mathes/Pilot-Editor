@@ -1,6 +1,6 @@
 # X-Wing test pilots
 
-Sixteen pilot files for checking two open items from `PLAN.md` in the game itself. They are built on the game's own `ROOKIE.PLT` (the 1705-byte Collector's layout), with each tour's progress, last-slot marker and operation scores filled in the way the editor writes them. The file name is the pilot name.
+Sixteen pilot files for checking two open items from `PLAN.md` in the game itself. They are built on the game's own `ROOKIE.PLT` (the 1705-byte layout of the 1998 version), with each tour's progress, last-slot marker and operation scores filled in the way the editor writes them. The file name is the pilot name.
 
 Regenerate them with `node tools/make-test-pilots.js` (see `tools/make-test-pilots.js`).
 

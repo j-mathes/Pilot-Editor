@@ -13,7 +13,7 @@ Open the live version, or download the repository and open `index.html` directly
 
 | Game | Files | Accepted sizes |
 |---|---|---|
-| X-Wing | `.plt` | 1705 (1998 version), 1706 (original game, 1993 and 1994) and 3410 bytes (Collector's layout stored twice) |
+| X-Wing | `.plt` | 1705 (1998 version) and 1706 (1993 original and 1994 Collector's CD). A 3410-byte file is not valid: it opens by its first half, with a warning, and saves as a proper 1705-byte file. |
 | TIE Fighter | `.tfr` | 3856 bytes (the 1994, 1995 and 1998 versions share it) |
 
 The file label at the top of the page also says which game version a file is for.
@@ -27,6 +27,7 @@ The file label at the top of the page also says which game version a file is for
 - Presets (Top Ace, and a reset to a new pilot), bulk actions (including buttons that max the scores), and calculated totals, some with a Sync button. The X-Wing Tour of Duty points can also be kept equal to the total of the recorded operation scores.
 - **Compare**: open a second pilot of the same game beside the open one. Only differing fields are listed, with copy arrows in both directions (per field, per group or all), its own Undo and Redo, and a Save button for each side. A raw bytes comparison under it covers every byte, including unknown ones, with ASCII, previous and next difference, go to offset, range selection and byte copies.
 - **Raw bytes** view with an ASCII column, go to offset, byte selection (click, shift-click, drag or arrow keys) with the offset, field and value shown above it, filters for rows with data and rows with changes, and bytes that differ from the opened file marked. Bytes the editor does not understand are kept as they are.
+- A **Convert to...** menu for X-Wing pilots that re-lays a pilot out as another file layout (1706 for the 1993 original and 1994 Collector's CD, or 1705 for the 1998 version) without changing any field. The result is a new unsaved file; the opened file is left alone.
 - A **Help** panel (button or F1) that describes all of this, including the byte ranges no field maps to.
 - Light and dark themes, and keyboard shortcuts: Ctrl+O open, Ctrl+S save, Ctrl+Shift+S save as, Ctrl+Z undo, Ctrl+Y redo, F1 help.
 - A copy of each opened file is kept in the browser (Restore), and an optional `.bak` download on the first in-place save.

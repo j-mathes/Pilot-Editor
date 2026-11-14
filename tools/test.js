@@ -20,7 +20,11 @@ const samples = [];
 const walk = (dir, re) => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(e =>
   e.isDirectory() ? walk(path.join(dir, e.name), re) : (re.test(e.name) ? [{ name: e.name, file: path.join(root, dir, e.name) }] : []));
 for (const [dir, re] of [['reference/X-Wing', /\.(plt|bak)$/i], ['reference/TIE-Fighter', /\.tfr$/i]]) {
-  for (const s of walk(dir, re)) samples.push({ name: s.name, bytes: new Uint8Array(fs.readFileSync(s.file)) });
+  for (const s of walk(dir, re)) {
+    let bytes = new Uint8Array(fs.readFileSync(s.file));
+    if (bytes.length === 3410) bytes = bytes.slice(0, 1705); // the old editor's doubled files: keep the pilot data, the size is rejected on its own
+    samples.push({ name: s.name, bytes });
+  }
 }
 
 // ---- Table sanity ----
@@ -530,6 +534,50 @@ test('New pilots made in each game version match the editor\'s blank pilot', () 
   for (const n of ['T1994.TFR', 'T1995.TFR', 'T1998.tfr']) assert(same(read(n), PE.games.tie.blank()), n);
 });
 
+test('X-Wing: converting between the file layouts is lossless and matches new pilots from each version', () => {
+  const def = PE.games.xwing;
+  const dir = path.join(root, 'reference', 'X-Wing', 'Pilot Files', 'Original');
+  const read = n => new Uint8Array(fs.readFileSync(path.join(dir, n)));
+  const same = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)) === 0;
+  const x1993 = read('X1993.PLT'), x1998 = read('X1998.PLT');
+  assert(same(def.convert(x1998, 1706), x1993), '1998 to original gives the new pilot the original game makes');
+  assert(same(def.convert(x1993, 1705), x1998), 'and back');
+  let checked = 0;
+  for (const s of samples.filter(x => [1705, 1706].includes(x.bytes.length))) {
+    const original = PE.createState(def, s.name, s.bytes);
+    for (const length of [1705, 1706]) {
+      const converted = def.convert(s.bytes, length);
+      assert.strictEqual(converted.length, length);
+      assert.strictEqual(PE.compare.differences(original, PE.createState(def, s.name, converted)).length, 0, s.name + ' to ' + length + ' keeps every field');
+    }
+    const other = s.bytes.length === 1705 ? 1706 : 1705;
+    assert(same(def.convert(def.convert(s.bytes, other), s.bytes.length), s.bytes), s.name + ' round trip');
+    checked++;
+  }
+  assert(checked > 40, 'sample files checked: ' + checked);
+  const noksp = PE.createState(def, 'N', samples.find(s => s.name === 'NOKSP.PLT').bytes);
+  assert(def.convertNotes(noksp, samples.find(s => s.name === 'NOKSP.PLT').bytes, 1706).some(n => /Tours 4 or 5/.test(n)), 'progress in Tours 4 and 5 is flagged');
+  const rookie = PE.createState(def, 'R', x1998);
+  assert(!def.convertNotes(rookie, x1998, 1706).some(n => /Tours 4 or 5/.test(n)));
+  assert(def.convertNotes(rookie, x1998, 1706).some(n => /not been tried/.test(n)));
+  assert.strictEqual(PE.games.tie.layouts, undefined, 'TIE Fighter has a single layout');
+});
+
+test('X-Wing: one training mission in the 1998 version changes only the training level and best score', () => {
+  const dir = path.join(root, 'reference', 'X-Wing', 'Pilot Files', 'Original');
+  const a = new Uint8Array(fs.readFileSync(path.join(dir, 'X1998.PLT')));
+  const b = new Uint8Array(fs.readFileSync(path.join(dir, 'X1998-2.PLT')));
+  const diffs = [];
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) diffs.push(i);
+  assert.deepStrictEqual(Array.from(diffs), [38, 39, 134], 'only the first craft\'s best score and level bytes changed');
+  const before = PE.createState(PE.games.xwing, 'a', a);
+  const after = PE.createState(PE.games.xwing, 'b', b);
+  assert.strictEqual(after.get('training.0.level'), 1);
+  assert.strictEqual(after.get('training.0.score'), 11475);
+  assert.deepStrictEqual(Array.from(PE.compare.differences(before, after), r => r.id).sort(), ['training.0.level', 'training.0.score']);
+  assert.deepStrictEqual(Array.from(after.warnings()), []);
+});
+
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
   const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE|X199\d)/i.test(s.name) && s.name !== 'CALE.PLT');
   assert(roster.length >= 30, 'roster files missing: ' + roster.length);
@@ -545,7 +593,7 @@ test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layou
   }
 });
 
-test('RUSTY.PLT (3410 bytes)', () => {
+test('RUSTY.PLT (first half of a 3410-byte file)', () => {
   const st = load('RUSTY.PLT');
   assert.strictEqual(st.get('tour.0.status'), 1);
   assert.strictEqual(st.get('tour.0.ops'), 6);
@@ -629,7 +677,7 @@ test('mirrors write both copies of the current-tour count', () => {
 });
 
 test('mirror option copies the active half over the backup half', () => {
-  for (const [name, half] of [['RUSTY1.tfr', 1928], ['RUSTYx.PLT', 1705]]) {
+  for (const [name, half] of [['RUSTY1.tfr', 1928]]) {
     const st = load(name);
     st.set('pilot.rank', 3);
     const plain = st.toBytes();
@@ -645,6 +693,24 @@ test('1706-byte files keep their length and trailing byte', () => {
   const out = st.toBytes({ mirror: true });
   assert.strictEqual(out.length, 1706);
   assert.strictEqual(out[1704], 99);
+});
+
+test('3410-byte X-Wing files (an old editor\'s mistake) open by their first half and are saved as proper 1705-byte files', () => {
+  const raw = n => new Uint8Array(fs.readFileSync(path.join(root, 'reference', 'X-Wing', n)));
+  for (const name of ['RUSTY.PLT', 'RUSTYx.PLT']) {
+    const bytes = raw(name);
+    assert.strictEqual(bytes.length, 3410);
+    const det = PE.files.detect(name, bytes.length);
+    assert.strictEqual(det.def.id, 'xwing');
+    assert.strictEqual(det.repairTo, 1705);
+    assert(/not a valid pilot file/.test(det.warnings[0]), det.warnings[0]);
+    assert.strictEqual(det.variant, PE.games.xwing.variants[1705]);
+    const st = PE.createState(det.def, name, bytes.slice(0, det.repairTo));
+    assert.strictEqual(st.toBytes({ mirror: true }).length, 1705, 'it saves as a proper 1705-byte file');
+    assert.strictEqual(Buffer.compare(Buffer.from(st.toBytes({ mirror: true })), Buffer.from(bytes.subarray(0, 1705))), 0, 'and the first half is kept exactly');
+  }
+  assert.strictEqual(PE.games.xwing.variants[3410], undefined, '3410 is not a layout of its own');
+  assert.strictEqual(PE.files.detect('x.plt', 1705).repairTo, null);
 });
 
 test('detect rejects unknown sizes and warns on extension mismatch', () => {

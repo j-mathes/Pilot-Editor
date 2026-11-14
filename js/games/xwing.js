@@ -443,6 +443,46 @@
     }
   }];
 
+  // File layouts a pilot can be converted between. The 1706-byte layout is the 1705-byte one with one extra byte at 735 (always 0 in real files).
+  const LAYOUTS = [
+    { length: 1706, label: '1993 original and 1994 Collector\'s CD (1706 bytes)' },
+    { length: 1705, label: '1998 version (1705 bytes)' }
+  ];
+  const SHIFT_AT = 735;
+
+  function convert(bytes, length) {
+    let base;
+    if (bytes.length === 1706) {
+      base = new Uint8Array(1705);
+      base.set(bytes.subarray(0, SHIFT_AT));
+      base.set(bytes.subarray(SHIFT_AT + 1), SHIFT_AT);
+    } else {
+      base = bytes.slice(0, 1705);
+    }
+    if (length === 1705) return base;
+    const out = new Uint8Array(1706);
+    out.set(base.subarray(0, SHIFT_AT));
+    out.set(base.subarray(SHIFT_AT), SHIFT_AT + 1);
+    return out;
+  }
+
+  // What a conversion may lose or get wrong, for the confirmation message.
+  function convertNotes(state, bytes, length) {
+    const notes = [];
+    if (bytes.length === 1706 && bytes[SHIFT_AT] !== 0) notes.push('Byte 735 of this file is not 0 and is dropped.');
+    if (length === 1706) {
+      let used = false;
+      for (let t = 3; t < 5 && !used; t++) {
+        if (state.get('tour.' + t + '.status') || state.get('tour.' + t + '.ops')) used = true;
+        for (let i = 0; i < TOUR_SLOTS[t]; i++) if (state.get('tour.' + t + '.op.' + i)) used = true;
+      }
+      if (state.get('training.3.level') || state.get('training.3.score')) used = true;
+      if (used) notes.push('This pilot has progress in Tours 4 or 5 or B-wing training, stored the way the 1998 version does. Whether the 1993 and 1994 versions use the same slots for them is not known.');
+    }
+    notes.push('The converted file has not been tried in the game.');
+    return notes;
+  }
+
   PE.games.xwing = {
     id: 'xwing',
     name: 'X-Wing',
@@ -450,24 +490,26 @@
     ext: ['.plt'],
     variants: {
       1705: {
-        use: 'for X-Wing 1998 (Collector\'s)',
-        detail: 'The 1998 version (the Collector\'s edition) writes this 1705-byte layout. It has Tours 4 and 5 and the B-wing.'
+        use: 'for X-Wing 1998',
+        detail: 'The 1998 version writes this 1705-byte layout.'
       },
       1706: {
         shift: 1, shiftFrom: 735,
-        use: 'for the original X-Wing (1993, 1994)',
-        detail: 'The original X-Wing writes this 1706-byte layout. New pilots from the 1993 and 1994 versions are byte for byte identical, so either can open the file; it has no Tours 4 and 5 data. Whether the 1998 version accepts it is untested.',
-        note: 'This is the 1706-byte layout of the original X-Wing (it matches 35 original pilot files): from byte 735 on everything sits one byte later than in the 1705-byte Collector\'s CD layout.'
-      },
+        use: 'for X-Wing 1993 or 1994 (original or Collector\'s CD)',
+        detail: 'The 1993 original and the 1994 Collector\'s CD-ROM both write this 1706-byte layout; new pilots from the two are byte for byte identical, so either can open the file. Whether the 1998 version accepts it is untested.',
+        note: 'This is the 1706-byte layout written by the 1993 original and the 1994 Collector\'s CD (it matches 35 original pilot files): from byte 735 on everything sits one byte later than in the 1705-byte layout of the 1998 version.'
+      }
+    },
+    repairSizes: {
       3410: {
-        half: 1705,
-        use: 'Collector\'s layout, stored twice',
-        detail: 'Two copies of the 1705-byte Collector\'s layout. Which game version writes this size is not documented.'
+        to: 1705,
+        message: 'This file is 3410 bytes: two copies of a 1705-byte pilot. No version of X-Wing writes that size (an older editor created it by mistake), so it is not a valid pilot file. Its first 1705 bytes were opened as a 1998-layout pilot. Save writes a proper 1705-byte file (use Convert to... for the 1706-byte layout) and the file you opened is not changed.'
       }
     },
     theme: { accent: '#e8832a', accent2: '#3d7fd6', glyph: 'X' },
     fields, derived, sections, onChange, enforce, autoUpdate, copyWith, warnings, blank, presets,
     opSlots: OP_SLOTS,
+    layouts: LAYOUTS, convert, convertNotes,
     summary: g => (RANKS[g('pilot.rank')] || 'Unknown rank') + ' · ' + (HEALTH[g('pilot.health')] || 'Unknown health') +
       ' · ' + g('pilot.score').toLocaleString('en-US') + ' Tour of Duty points'
   };

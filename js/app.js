@@ -7,6 +7,8 @@
 
   const session = { state: null, handle: null, openedBytes: null, backupDone: false };
 
+  const sameBytes = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+
   function discardOk() {
     const s = session.state;
     return !s || !s.isDirty() || root.confirm('You have unsaved changes. Discard them?');
@@ -29,24 +31,29 @@
 
   function loadBytes(name, bytes, handle) {
     let det, state;
+    let usable = bytes;
     try {
       det = PE.files.detect(name, bytes.length);
-      state = PE.createState(det.def, PE.files.baseName(name), bytes);
+      if (det.repairTo) usable = bytes.slice(0, det.repairTo);
+      state = PE.createState(det.def, PE.files.baseName(name), usable);
     } catch (err) {
       shell.banner(err.message, 'error');
       return;
     }
     if (!discardOk()) return;
     const notes = det.warnings.slice();
-    if (PE.files.halvesDiffer(det.variant, bytes)) {
+    if (det.repairTo) {
+      if (!sameBytes(bytes.subarray(0, det.repairTo), bytes.subarray(det.repairTo))) notes.push('The second half differs from the first and was ignored.');
+    } else if (PE.files.halvesDiffer(det.variant, bytes)) {
       notes.push('The backup half of this file differs from the active pilot. Saving will overwrite it with the active pilot (the original stays in Restore).');
     }
-    startSession(state, handle, bytes);
+    startSession(state, det.repairTo ? null : handle, usable);
+    if (det.repairTo) state.markUnsaved();
     const existing = state.warnings().length;
     if (state.enforcing() && existing) {
       notes.push('Enforce rules only applies to your edits, so the ' + existing + (existing === 1 ? ' warning' : ' warnings') + ' already in this file stay as they are (see Changes).');
     }
-    shell.banner('Opened ' + name + ' as a ' + det.def.name + ' pilot (' + bytes.length + ' bytes).', notes.length ? 'warn' : 'info', notes);
+    shell.banner('Opened ' + name + ' as a ' + det.def.name + ' pilot (' + (det.repairTo ? 'first ' + usable.length + ' of ' + bytes.length : bytes.length) + ' bytes).', notes.length ? 'warn' : 'info', notes);
     PE.files.snapshots.save(name, det.def.id, bytes).catch(() => { /* snapshots are best effort */ });
   }
 
@@ -100,9 +107,11 @@
     const left = session.state;
     if (!left || PE.ui.diff.active()) return;
     let det, state;
+    let usable = bytes;
     try {
       det = PE.files.detect(name, bytes.length);
-      state = PE.createState(det.def, PE.files.baseName(name), bytes);
+      if (det.repairTo) usable = bytes.slice(0, det.repairTo);
+      state = PE.createState(det.def, PE.files.baseName(name), usable);
     } catch (err) {
       shell.banner(err.message, 'error');
       return;
@@ -112,7 +121,8 @@
       return;
     }
     shell.banner(null);
-    const right = { state, handle: handle || null, openedBytes: new Uint8Array(bytes), backupDone: false };
+    if (det.repairTo) state.markUnsaved();
+    const right = { state, handle: det.repairTo ? null : (handle || null), openedBytes: new Uint8Array(usable), backupDone: false };
     PE.ui.diff.open({ left: session, right, save: sess => saveSession(sess, false), exit: exitCompare });
   }
 
@@ -144,6 +154,24 @@
     shell.toggleDrawer(false);
     shell.show(null);
     shell.banner(null);
+  }
+
+  // Re-lays the open pilot out in another file layout; the result is a new, unsaved pilot that is not tied to the opened file.
+  function convertPilot(length) {
+    const s = session.state;
+    if (!s || !s.def.convert || !length) return;
+    const target = s.def.layouts.find(l => l.length === length);
+    if (!target) return;
+    const current = s.toBytes({ mirror: true });
+    const notes = s.def.convertNotes ? s.def.convertNotes(s, current, length) : [];
+    const ask = 'Convert ' + s.name + ' to ' + target.label + '?\n\n' + notes.join('\n') +
+      '\n\nThe result is a new unsaved file: Save asks where to put it, and the file you opened is not changed.';
+    if (!root.confirm(ask)) return;
+    const bytes = s.def.convert(current, length);
+    const state = PE.createState(s.def, s.name, bytes);
+    state.markUnsaved();
+    startSession(state, null, bytes);
+    shell.banner('Converted to ' + target.label + '. It is a new unsaved file.', 'info', notes);
   }
 
   function applyPreset(value) {
@@ -218,6 +246,7 @@
     for (const btn of document.querySelectorAll('[data-new]')) btn.addEventListener('click', () => newPilot(btn.dataset.new));
     newSel.addEventListener('change', () => { if (newSel.value) newPilot(newSel.value); newSel.value = ''; });
     $('presetSelect').addEventListener('change', e => { applyPreset(e.target.value); e.target.value = ''; });
+    $('convertSelect').addEventListener('change', e => { const length = Number(e.target.value); e.target.value = ''; convertPilot(length); });
 
     $('pilotName').addEventListener('change', e => {
       const clean = e.target.value.replace(/[\\/:*?"<>|]/g, '').trim();
@@ -264,7 +293,7 @@
     }
   }
 
-  PE.app = { init, session, loadBytes, newPilot, save, closePilot, compareWith, exitCompare };
+  PE.app = { init, session, loadBytes, newPilot, save, closePilot, compareWith, exitCompare, convertPilot };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

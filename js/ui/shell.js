@@ -132,6 +132,8 @@
       $('editor').hidden = true;
       $('sidebar').hidden = true;
       $('presetSelect').textContent = '';
+      $('convertSelect').textContent = '';
+      $('convertSelect').disabled = true;
       updateHeader();
       updateDrawer();
       return;
@@ -149,6 +151,14 @@
     (state.def.presets || []).forEach((p, i) => preset.append(h('option', { value: String(i), title: p.title || p.label }, p.label)));
     preset.value = '';
 
+    const convert = $('convertSelect');
+    convert.textContent = '';
+    convert.append(h('option', { value: '' }, 'Convert to...'));
+    for (const l of state.def.layouts || []) {
+      if (l.length !== state.length) convert.append(h('option', { value: String(l.length), title: l.label }, l.label));
+    }
+    convert.value = '';
+    convert.disabled = convert.options.length < 2;
     $('pilotName').value = state.name;
     $('landing').hidden = true;
     $('editor').hidden = false;

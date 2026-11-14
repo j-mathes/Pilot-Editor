@@ -12,23 +12,28 @@
     return i > 0 ? name.slice(0, i) : name;
   }
 
-  // Chooses the game by size first; the extension only produces a warning.
+  // Chooses the game by size first; the extension only produces a warning. A size listed in a game's repairSizes opens its first part as the layout named there.
   function detect(name, length) {
-    const matches = Object.values(PE.games).filter(g => g.variants[length]);
+    let repair = null;
+    for (const g of Object.values(PE.games)) {
+      if (g.repairSizes && g.repairSizes[length]) repair = g.repairSizes[length];
+    }
+    const effective = repair ? repair.to : length;
+    const matches = Object.values(PE.games).filter(g => g.variants[effective]);
     if (!matches.length) {
       const expected = Object.values(PE.games)
         .map(g => g.name + ': ' + Object.keys(g.variants).join(', ') + ' bytes').join('; ');
       throw new Error('This file is ' + length + ' bytes, which is not a supported pilot file size (' + expected + ').');
     }
     const def = matches[0];
-    const variant = def.variants[length];
-    const warnings = [];
+    const variant = def.variants[effective];
+    const warnings = repair ? [repair.message] : [];
     const ext = extOf(name);
     if (ext && !def.ext.includes(ext)) {
       warnings.push('The extension "' + ext + '" does not match a ' + def.name + ' pilot file, but the size does. Opened as ' + def.name + '.');
     }
     if (variant.note) warnings.push(variant.note);
-    return { def, variant, warnings };
+    return { def, variant, warnings, repairTo: repair ? repair.to : null };
   }
 
   function halvesDiffer(variant, bytes) {

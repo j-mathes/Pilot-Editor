@@ -34,6 +34,7 @@
       <button type="button" class="btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled>Undo</button>
       <button type="button" class="btn" id="btnRedo" title="Redo (Ctrl+Y)" disabled>Redo</button>
       <select id="presetSelect" class="btn diff-hide" aria-label="Presets" title="Apply a preset to this pilot (can be undone)" disabled></select>
+      <select id="convertSelect" class="btn diff-hide" aria-label="Convert" title="Convert this pilot to another file layout of the same game (the result is a new unsaved file)" disabled></select>
       <button type="button" class="btn diff-hide" id="btnCompare" title="Compare this pilot with another file of the same game and copy fields between them" disabled>Compare</button>
       <button type="button" class="btn diff-hide" id="btnChanges" aria-expanded="false" aria-controls="drawer" title="Show changes since the file was opened or saved, and warnings" disabled>
         Changes <span class="count" id="changeCount" hidden></span> <span class="count warn" id="warnBadge" hidden></span>
@@ -133,13 +134,14 @@
     <div class="help-body" tabindex="0">
       <h3>Opening and saving</h3>
       <ul>
-        <li><strong>Open</strong> (Ctrl+O) or drop a file anywhere on the page. X-Wing <code>.plt</code> files (1705, 1706 or 3410 bytes) and TIE Fighter <code>.tfr</code> files (3856 bytes) are recognised by size. Files stay on your computer; nothing is uploaded. The label beside the file name at the top says which game version the layout belongs to (hover it for details): X-Wing 1706 bytes for the original game (1993 and 1994), 1705 for the 1998 version, and TIE Fighter 3856 for the 1994, 1995 or 1998 version.</li>
+        <li><strong>Open</strong> (Ctrl+O) or drop a file anywhere on the page. X-Wing <code>.plt</code> files (1705 or 1706 bytes) and TIE Fighter <code>.tfr</code> files (3856 bytes) are recognised by size. A 3410-byte X-Wing file is not a valid pilot file (an older editor made them by mistake): it opens by its first 1705 bytes with a warning, is not tied to the file you opened, and Save writes a proper 1705-byte file. Files stay on your computer; nothing is uploaded. The label beside the file name at the top says which game version the layout belongs to (hover it for details): X-Wing 1706 bytes for the 1993 original and the 1994 Collector's CD, 1705 for the 1998 version, and TIE Fighter 3856 for the 1994, 1995 or 1998 version.</li>
         <li><strong>New pilot</strong> starts a blank pilot for either game. The TIE Fighter blank matches a pilot created in the 1994 and 1998 games. The X-Wing blank matches new pilots created in the 1993, 1994 and 1998 versions.</li>
         <li><strong>Save</strong> (Ctrl+S) writes over the file in browsers that allow it (Chrome, Edge); otherwise it downloads a new copy and your original is untouched. <strong>Save as</strong> (Ctrl+Shift+S) always writes a new file.</li>
         <li><strong>Backup original</strong> downloads the file as it was opened (<code>.bak</code>) before the first in-place save.</li>
         <li><strong>Restore</strong> lists the 20 most recent files as they were opened, kept in this browser only.</li>
         <li><strong>Close</strong> goes back to the start page and asks first if there are unsaved changes.</li>
-        <li>Files with two halves (TIE Fighter and the 3410-byte X-Wing file) hold the pilot twice; saving writes the active pilot to both halves.</li>
+        <li><strong>Convert to...</strong> (X-Wing only) re-lays the open pilot out as another file layout: 1706 bytes (the 1993 original and the 1994 Collector's CD), 1705 bytes (the 1998 version). Only the one extra byte at 735 (always 0) differs, so no field changes; it asks first and lists anything the target game may not read, such as Tours 4 and 5 progress. The result is a new unsaved file, so Save asks where to put it and the file you opened is not touched. A converted file has not been tried in the game.</li>
+        <li>TIE Fighter files hold the pilot twice (the active pilot and a backup copy); saving writes the active pilot to both halves.</li>
       </ul>
 
       <h3>Editing</h3>
@@ -169,7 +171,7 @@
         <li>The arrows between the values copy a field to the left or right file. The arrows on a group heading copy that group's shown differences, and the <em>all</em> buttons in the table header copy every shown difference. Related fields travel together (operations completed and last completed slot).</li>
         <li>Copies set values exactly as they are in the other file; Enforce rules is not applied.</li>
         <li><strong>Raw bytes</strong> at the bottom of the comparison shows both files byte by byte with an ASCII column; differing bytes are highlighted. The title, tools and column header (file names and 00 to 0F offsets) stay in view while you scroll. <strong>Previous</strong> and <strong>Next</strong> (or P and N in the grid) select the next block of differing bytes, <strong>Go to offset</strong> takes hex (0x2E1) or decimal, and <em>Rows with differences only</em> hides identical rows, and <em>Rows with data only</em> hides rows that are all 00 in both files. Click a byte, shift-click or drag to select a range (arrow keys move, shift extends); hover a byte for its offset, field and both values, and double-click a byte that belongs to a field to jump to it in the table.</li>
-        <li><strong>Copy bytes</strong> writes the selected bytes from one file into the other, including unknown bytes; bytes that belong to a field update that field. It is one Undo step. Only each file's pilot part is compared (the backup half of a two-half file is rewritten when you save). Files with different layouts (the 1706-byte original X-Wing against the 1705-byte Collector's file) are compared by offset, so differences after the shift are expected and byte copies are turned off; use the field table for those.</li>
+        <li><strong>Copy bytes</strong> writes the selected bytes from one file into the other, including unknown bytes; bytes that belong to a field update that field. It is one Undo step. Only each file's pilot part is compared (the backup half of a two-half file is rewritten when you save). Files with different layouts (the 1706-byte 1993/1994 file against the 1705-byte 1998 file) are compared by offset, so differences after the shift are expected and byte copies are turned off; use the field table for those.</li>
         <li>Undo and Redo step back through the copies, whichever side they changed. Save writes a side, and each side has its own Save button. <strong>Done</strong> returns to editing; it asks first if the other file has unsaved changes.</li>
         <li>Opening files is switched off while comparing.</li>
       </ul>

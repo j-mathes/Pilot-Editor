@@ -144,6 +144,8 @@
     };
 
     state.setEnforce = on => { enforce = !!on; };
+    // A pilot made by converting another file has never been saved, so it starts out unsaved.
+    state.markUnsaved = () => { cleanValid = false; emit([]); };
     state.setAuto = (key, on) => { if (on) autos.add(key); else autos.delete(key); };
     state.hasAuto = key => autos.has(key);
     state.enforcing = () => enforce;
