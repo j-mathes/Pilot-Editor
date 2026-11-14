@@ -464,6 +464,17 @@ JSDOM.fromFile(path.join(root, 'index.html'), {
     assert.strictEqual(state.get('pilot.score'), 4500);
   });
 
+  check('The file chip says which game version a file belongs to', () => {
+    const chip = () => $('fileChip');
+    PE.app.loadBytes('TOPACE.PLT', read('reference/X-Wing/TOPACE.PLT'), null);
+    assert(/1706 bytes · for the original X-Wing \(1993, 1994\)/.test(chip().textContent), chip().textContent);
+    assert(/untested/.test(chip().title), chip().title);
+    PE.app.loadBytes('ROOKIE.PLT', read('reference/X-Wing/ROOKIE.PLT'), null);
+    assert(/1705 bytes · for X-Wing 1998/.test(chip().textContent), chip().textContent);
+    PE.app.loadBytes('TOPACE10.TFR', read('reference/TIE-Fighter/TOPACE10.TFR'), null);
+    assert(/3856 bytes · for TIE Fighter 1994, 1995 or 1998/.test(chip().textContent), chip().textContent);
+  });
+
   check('Help covers the main features', () => {
     const text = $('helpDialog').textContent;
     for (const term of ['Compare', 'Enforce rules', 'Go to offset', 'Theme', 'Sync', 'Restore', 'Copy bytes', 'Presets', 'Shortcuts', 'Unknown bytes are kept']) assert(text.includes(term), 'Help is missing: ' + term);

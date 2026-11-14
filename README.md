@@ -13,8 +13,10 @@ Open the live version, or download the repository and open `index.html` directly
 
 | Game | Files | Accepted sizes |
 |---|---|---|
-| X-Wing | `.plt` | 1705, 1706 and 3410 bytes |
-| TIE Fighter | `.tfr` | 3856 bytes |
+| X-Wing | `.plt` | 1705 (1998 version), 1706 (original game, 1993 and 1994) and 3410 bytes (Collector's layout stored twice) |
+| TIE Fighter | `.tfr` | 3856 bytes (the 1994, 1995 and 1998 versions share it) |
+
+The file label at the top of the page also says which game version a file is for.
 
 ## Features
 
@@ -37,7 +39,7 @@ Open the live version, or download the repository and open `index.html` directly
 ## Known limits
 
 - The 1706-byte X-Wing layout is inferred from sample files: everything from byte 735 on is shifted by one. Check results in the game. Comparing a 1706-byte file with a 1705-byte one compares bytes by offset, so byte copies are switched off for that pair (field copies still work).
-- The TIE Fighter new-pilot values match pilots created in the 1994 and 1998 games. The X-Wing new-pilot values come from sample files and have not been checked against a pilot created in the game itself.
+- New pilots created by the editor match new pilots made in the game: TIE Fighter in the 1994, 1995 and 1998 versions, and X-Wing in the 1993, 1994 and 1998 versions.
 - Presets: Top Ace for X-Wing, two Top Ace presets for TIE Fighter (battles 1 to 10 or 1 to 7), and Reset to new pilot for both.
 - TIE Fighter Secret Order values 7 to 9 are described by no document and have no rule, and the highest training level the game allows is unknown. `TRAIN.HGH` (the training high score list) is not opened.
 - Compare works on two files of the same game; opening files is switched off while comparing.

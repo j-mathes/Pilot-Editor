@@ -56,7 +56,8 @@
     for (const id of ['btnSave', 'btnSaveAs', 'btnClose', 'btnCompare', 'btnChanges', 'presetSelect']) $(id).disabled = !s;
     if (!s) { document.title = 'Pilot Editor'; return; }
     const dirty = s.isDirty();
-    chip.textContent = s.name + s.def.ext[0] + ' · ' + s.length + ' bytes' + (dirty ? ' · unsaved changes' : '');
+    chip.textContent = s.name + s.def.ext[0] + ' · ' + s.length + ' bytes' + (s.variant.use ? ' · ' + s.variant.use : '') + (dirty ? ' · unsaved changes' : '');
+    chip.title = s.variant.detail || '';
     chip.classList.toggle('dirty', dirty);
     document.title = (dirty ? '* ' : '') + s.name + ' - ' + s.def.pilotTitle;
     $('summary').textContent = s.def.summary ? s.def.summary(s.get) : '';

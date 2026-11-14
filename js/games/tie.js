@@ -343,7 +343,13 @@
     name: 'TIE Fighter',
     pilotTitle: 'TIE Fighter Pilot',
     ext: ['.tfr'],
-    variants: { 3856: { half: 1928 } },
+    variants: {
+      3856: {
+        half: 1928,
+        use: 'for TIE Fighter 1994, 1995 or 1998',
+        detail: 'New pilots from the 1994, 1995 and 1998 versions are byte for byte identical, so any of them can open this file.'
+      }
+    },
     theme: { accent: '#4fae6a', accent2: '#8d99a6', glyph: 'T' },
     fields, derived, sections, enforce, warnings, blank, presets,
     summary: g => (RANKS[g('pilot.rank')] || 'Unknown rank') + ' · ' + (HEALTH[g('pilot.health')] || 'Unknown status') +

@@ -449,12 +449,21 @@
     pilotTitle: 'X-Wing Pilot',
     ext: ['.plt'],
     variants: {
-      1705: {},
+      1705: {
+        use: 'for X-Wing 1998 (Collector\'s)',
+        detail: 'The 1998 version (the Collector\'s edition) writes this 1705-byte layout. It has Tours 4 and 5 and the B-wing.'
+      },
       1706: {
         shift: 1, shiftFrom: 735,
+        use: 'for the original X-Wing (1993, 1994)',
+        detail: 'The original X-Wing writes this 1706-byte layout. New pilots from the 1993 and 1994 versions are byte for byte identical, so either can open the file; it has no Tours 4 and 5 data. Whether the 1998 version accepts it is untested.',
         note: 'This is the 1706-byte layout of the original X-Wing (it matches 35 original pilot files): from byte 735 on everything sits one byte later than in the 1705-byte Collector\'s CD layout.'
       },
-      3410: { half: 1705 }
+      3410: {
+        half: 1705,
+        use: 'Collector\'s layout, stored twice',
+        detail: 'Two copies of the 1705-byte Collector\'s layout. Which game version writes this size is not documented.'
+      }
     },
     theme: { accent: '#e8832a', accent2: '#3d7fd6', glyph: 'X' },
     fields, derived, sections, onChange, enforce, autoUpdate, copyWith, warnings, blank, presets,

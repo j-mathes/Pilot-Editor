@@ -516,8 +516,22 @@ test('X-Wing: optional automatic Tour of Duty points follow the operation scores
   assert.strictEqual(other.get('pilot.score'), 0, 'copies in Compare are exact and do not recalculate');
 });
 
+test('New pilots made in each game version match the editor\'s blank pilot', () => {
+  const dir = path.join(root, 'reference', 'X-Wing', 'Pilot Files', 'Original');
+  const read = n => new Uint8Array(fs.readFileSync(path.join(dir, n)));
+  const same = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)) === 0;
+  const xBlank = PE.games.xwing.blank();
+  assert(same(read('X1998.PLT'), xBlank), '1998 X-Wing (1705 bytes) is byte for byte the blank');
+  assert.strictEqual(read('X1993.PLT').length, 1706);
+  assert(same(read('X1993.PLT'), read('X1994.PLT')), 'the 1993 and 1994 X-Wing pilots are identical');
+  const blank = PE.createState(PE.games.xwing, 'B', xBlank);
+  const original = PE.createState(PE.games.xwing, 'O', read('X1993.PLT'));
+  assert.strictEqual(PE.compare.differences(blank, original).length, 0, 'the 1706-byte layout reads as the same blank');
+  for (const n of ['T1994.TFR', 'T1995.TFR', 'T1998.tfr']) assert(same(read(n), PE.games.tie.blank()), n);
+});
+
 test('X-Wing: the 35 premade pilots of the original game fit the 1706-byte layout', () => {
-  const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE)/i.test(s.name) && s.name !== 'CALE.PLT');
+  const roster = samples.filter(s => s.bytes.length === 1706 && !/^(TOPACE|IPTOPACE|X199\d)/i.test(s.name) && s.name !== 'CALE.PLT');
   assert(roster.length >= 30, 'roster files missing: ' + roster.length);
   for (const s of roster) {
     const st = PE.createState(PE.games.xwing, s.name, s.bytes);
