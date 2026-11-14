@@ -181,6 +181,9 @@
             api.set('battle.' + b + '.bonus', 255);
           }
         }, {
+          label: 'Max scores', title: 'Set every mission score in this battle to 2,046,820,351, the game\'s limit (can be undone)',
+          run: api => { for (let m = 0; m < MISSIONS[b]; m++) api.set('battle.' + b + '.score.' + m, MAX_SCORE); }
+        }, {
           label: 'Clear scores', title: 'Set every mission score in this battle to 0',
           run: api => { for (let m = 0; m < MISSIONS[b]; m++) api.set('battle.' + b + '.score.' + m, 0); }
         }]
@@ -197,7 +200,11 @@
       id: 'training', title: 'Training',
       blocks: [{
         type: 'table', title: 'Training simulator', columns: ['Next level (from 0)', 'Best score', 'Highest level completed'],
-        rows: SHIPS.map((name, i) => ({ label: name, cells: ['training.' + i + '.next', 'training.' + i + '.score', 'training.' + i + '.done'] }))
+        rows: SHIPS.map((name, i) => ({ label: name, cells: ['training.' + i + '.next', 'training.' + i + '.score', 'training.' + i + '.done'] })),
+        actions: [{
+          label: 'Max all best scores', title: 'Set every training best score to 2,046,820,351, the game\'s limit (can be undone)',
+          run: api => SHIPS.forEach((_, i) => api.set('training.' + i + '.score', MAX_SCORE))
+        }]
       }]
     },
     {
@@ -211,6 +218,9 @@
         actions: [{
           label: 'Mark all complete', title: 'Tick every historic mission as complete (scores are not changed)',
           run: api => SHIPS.forEach((_, s) => { for (let m = 0; m < 4; m++) api.set('hist.' + s + '.' + m + '.done', true); })
+        }, {
+          label: 'Max all scores', title: 'Set every historic mission score to 2,046,820,351, the game\'s limit (completion ticks are not changed)',
+          run: api => SHIPS.forEach((_, s) => { for (let m = 0; m < 4; m++) api.set('hist.' + s + '.' + m + '.score', MAX_SCORE); })
         }, {
           label: 'Clear all', title: 'Untick every historic mission and set its score to 0',
           run: api => SHIPS.forEach((_, s) => {
